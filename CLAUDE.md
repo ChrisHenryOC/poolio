@@ -38,12 +38,13 @@ poetry run ruff format src/ tests/
 ## Architecture
 
 ```
-src/[project_name]/
-├── core/           # Core domain logic
-├── api/            # API layer (if applicable)
-├── services/       # Business logic services
-├── models/         # Data models
-└── utils/          # Utilities
+├── docs/               # Documentation
+└── src/[project_name]/
+    ├── core/           # Core domain logic
+    ├── api/            # API layer (if applicable)
+    ├── services/       # Business logic services
+    ├── models/         # Data models
+    └── utils/          # Utilities
 ```
 
 ## Development Workflow
@@ -56,13 +57,16 @@ For every new feature or bug fix:
 2. **Green**: Write minimal code to pass the test
 3. **Refactor**: Clean up while tests stay green
 
-### Code Review
+### Slash Commands
 
 Use the provided slash commands:
 - `/review-pr [number]` - Review a pull request
 - `/fix-review [number]` - Fix issues from code review
-- `/issue [number]` - Work on a GitHub issue
+- `/implement-issue [number]` - Work on a GitHub issue
 - `/merge-pr [number]` - Merge and clean up
+- `/create-architecture` - Create architecture document
+- `/create-git-issues` - Create GitHub issues from plan
+- `/create-implementation-plan` - Create implementation plan
 
 ## Code Standards
 
