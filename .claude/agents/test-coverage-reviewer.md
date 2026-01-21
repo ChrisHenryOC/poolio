@@ -49,3 +49,44 @@ Review tests for evidence of test-driven development:
 - Are tests simple and readable?
 - Do tests have one clear assertion per behavior?
 - Are test fixtures minimal and focused?
+
+## Sequential Thinking for Test Analysis
+
+**Use `mcp__sequential-thinking__sequentialthinking`** for:
+
+### TDD Evidence Detection (estimate 4-5 thoughts)
+
+When assessing if tests were written test-first:
+
+1. **Examine test structure** - Do tests describe behavior or implementation?
+2. **Check edge cases** - Are edge cases covered? (TDD tends to catch these)
+3. **Look for over-mocking** - Heavy internal mocking suggests code-first
+4. **Review test names** - Do they describe scenarios or method names?
+5. **Verdict** - Evidence of TDD, code-first, or inconclusive?
+
+### Missing Test Identification (estimate 3-5 thoughts)
+
+When analyzing test coverage gaps:
+
+1. **Map code paths** - What are all the branches/paths in this code?
+2. **Map test coverage** - Which paths have tests? Which don't?
+3. **Prioritize gaps** - Which untested paths are most critical?
+4. **Consider edge cases** - Nulls, empty collections, boundaries?
+5. **Recommend tests** - What specific tests should be added?
+
+### Test Quality Assessment (estimate 3-4 thoughts)
+
+When evaluating existing test quality:
+
+1. **Isolation check** - Does each test stand alone? Hidden dependencies?
+2. **Brittleness check** - Would refactoring break these tests?
+3. **Assertion quality** - Are assertions specific and meaningful?
+4. **Maintenance burden** - Are tests easy to understand and update?
+
+### When to Branch Thinking
+
+Use `branchFromThought` when:
+
+- Multiple testing strategies could apply (unit vs integration)
+- Deciding if mocking is appropriate or excessive
+- Evaluating property-based vs example-based testing

@@ -18,6 +18,7 @@ Directory name: PR number + lowercase title with non-alphanumeric replaced by hy
 ## Step 2: Launch Agents
 
 Launch in parallel:
+
 - code-quality-reviewer
 - performance-reviewer
 - test-coverage-reviewer
@@ -26,29 +27,66 @@ Launch in parallel:
 
 Each agent reads `/tmp/pr$ARGUMENTS.diff` and saves findings to `code_reviews/PR$ARGUMENTS-<title>/{agent}.md`.
 
-## Step 3: Consolidate
+## Step 3: Consolidate with Sequential Thinking
 
-After agents complete, create `CONSOLIDATED-REVIEW.md`:
+After agents complete, **use `mcp__sequential-thinking__sequentialthinking`** to analyze and consolidate findings:
+
+### Analysis Process (estimate 6-10 thoughts)
+
+1. **Categorize findings** - Group by severity and type across all agent reports
+2. **Identify patterns** - Are multiple agents flagging related issues?
+3. **Evaluate against Beck's Four Rules** - Does the PR satisfy each rule?
+4. **Determine scope** - Which issues are in PR scope vs. pre-existing?
+5. **Assess actionability** - Can each issue be fixed in this PR?
+6. **Prioritize** - What's the critical path for fixes?
+7. **Revise as needed** - Use `isRevision: true` if earlier categorization was wrong
+
+### Key Questions to Resolve
+
+- Are there conflicting recommendations between agents?
+- Which findings are symptoms vs. root causes?
+- What's the minimum set of changes needed?
+
+### When to Branch Thinking
+
+Use `branchFromThought` when:
+
+- An issue could be categorized multiple ways (security vs. code quality)
+- Unclear if something is in PR scope
+- Multiple valid fix approaches exist
+
+Create `CONSOLIDATED-REVIEW.md`:
 
 ```markdown
 # Consolidated Review for PR #$ARGUMENTS
 
 ## Summary
+
 [2-3 sentences]
 
+## Sequential Thinking Summary
+
+- **Key patterns identified**: [What emerged from analyzing agent reports]
+- **Conflicts resolved**: [Any disagreements between agents and how resolved]
+- **Prioritization rationale**: [Why issues were ordered this way]
+
 ## Beck's Four Rules Check
+
 - [ ] Passes the tests - Are there adequate tests for new code?
 - [ ] Reveals intention - Is the code self-explanatory?
 - [ ] No duplication - Is DRY maintained?
 - [ ] Fewest elements - Is there any over-engineering?
 
 ## Issue Matrix
+
 (Use format from `.claude/memories/review-issue-matrix.md` if available)
 
 ## Actionable Issues
+
 [Issues where In PR Scope AND Actionable are Yes]
 
 ## Deferred Issues
+
 [Issues where either is No, with reason]
 ```
 
@@ -73,9 +111,22 @@ git push origin <branch>
 ## Agent Instructions
 
 Each agent:
+
 1. Read `/tmp/pr$ARGUMENTS.diff` first
 2. Apply Kent Beck's principles from `.claude/references/kent-beck-principles.md`
 3. Save findings to `code_reviews/PR$ARGUMENTS-<title>/{agent-name}.md` with:
    - Summary (2-3 sentences)
    - Findings by severity
    - File:line references
+
+---
+
+## Sequential Thinking Integration Points
+
+| Review Phase            | When to Use Sequential Thinking                          |
+| ----------------------- | -------------------------------------------------------- |
+| Consolidating reports   | Multiple agents with overlapping or conflicting findings |
+| Beck's Rules evaluation | Unclear if PR satisfies a rule                           |
+| Scope determination     | Changes touch pre-existing code                          |
+| Severity assignment     | Issue could be High or Medium depending on context       |
+| Writing summary         | Complex PR with many interrelated changes                |

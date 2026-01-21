@@ -47,3 +47,35 @@ Security controls should be proportionate to risk:
 - Don't flag missing security for internal-only code
 - Focus on actual attack vectors, not theoretical ones
 - Validate at boundaries, trust internal data flow
+
+## Sequential Thinking for Security Analysis
+
+**Use `mcp__sequential-thinking__sequentialthinking`** for:
+
+### Attack Vector Tracing (estimate 4-6 thoughts)
+
+When you find potential injection or data flow issues:
+
+1. **Identify the entry point** - Where does user/external data enter?
+2. **Trace the flow** - How does data move through the code?
+3. **Find the sink** - Where is the data used dangerously (SQL, shell, eval)?
+4. **Check sanitization** - Is data validated/escaped at any point in the flow?
+5. **Assess exploitability** - Is this actually reachable by an attacker?
+6. **Revise severity** - Use `isRevision: true` if initial assessment was wrong
+
+### Risk Proportionality (estimate 3-4 thoughts)
+
+When deciding severity for a security finding:
+
+1. **Attack surface** - Is this code reachable by untrusted users?
+2. **Impact** - What's the worst case? Data leak? RCE? DoS?
+3. **Likelihood** - How easy is exploitation? Requires auth? Complex payload?
+4. **Mitigations** - Are there other controls (WAF, rate limiting, etc.)?
+
+### When to Branch Thinking
+
+Use `branchFromThought` when:
+
+- Multiple attack vectors exist from same code
+- Uncertain if data is trusted or untrusted
+- Deciding between Critical (RCE, data breach) vs High (privilege escalation)

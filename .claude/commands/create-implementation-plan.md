@@ -31,7 +31,35 @@ From the **architecture document**, extract:
 - Tech stack decisions
 - Data models
 
-## 3. DECOMPOSE INTO ISSUES
+## 3. USE SEQUENTIAL THINKING FOR DECOMPOSITION
+
+**REQUIRED**: Use `mcp__sequential-thinking__sequentialthinking` to break down the implementation:
+
+### Issue Decomposition (estimate 8-12 thoughts)
+
+1. **Map features to components** - Which architectural components implement which features?
+2. **Identify dependencies** - What must be built before what?
+3. **Find the critical path** - What sequence determines minimum timeline?
+4. **Size the work** - Is each issue small enough for one session?
+5. **Verify completeness** - Do all issues sum to full requirements coverage?
+6. **Revise as needed** - Use `isRevision: true` when finding gaps or oversized issues
+
+### Key Questions to Resolve
+
+- What is the natural build order based on dependencies?
+- Are there issues that can be parallelized?
+- Where are the integration risk points?
+- What needs to be stubbed/mocked early?
+
+### When to Branch Thinking
+
+Use `branchFromThought` when facing decisions like:
+
+- Bottom-up vs. top-down implementation order
+- Depth-first (one feature complete) vs. breadth-first (all features partial)
+- Which component to tackle first when multiple are independent
+
+## 4. DECOMPOSE INTO ISSUES
 
 Break down the implementation into small, AI-agent-sized issues:
 
@@ -58,16 +86,20 @@ Each issue should:
 
 ### Issue Numbering
 
-**IMPORTANT**: Use simple incrementing integers (1, 2, 3, ...) for issue IDs, NOT phase-prefixed numbers (1.1, 1.2, 2.1).
+**IMPORTANT**: Use phase-prefixed format `X.Y` where X = phase number, Y = sequence within phase.
+
+Examples: `1.1`, `1.2`, `1.3`, `2.1`, `2.2`, `3.1`...
 
 This ensures:
-- Issue numbers can align with GitHub issue numbers when created in order
-- Single numbering scheme reduces confusion
-- Dependencies reference simple numbers (e.g., "Depends on: #3" not "Depends on: Issue 1.3")
 
-Phases are tracked via the **Phase** field on each issue, not via the issue number.
+- **Unambiguous IDs**: Plan issue `2.3` is clearly different from GitHub issue `#47`
+- **Self-documenting**: The phase is encoded directly in the issue ID
+- **Safe replacement**: When create-git-issues runs, no collision risk between formats
+- **Traceability**: Final document can show mapping (e.g., `#47 (was 2.3)`)
 
-## 4. DEFINE DEPENDENCIES
+Dependencies use the same format: `Dependencies: 1.2, 1.5`
+
+## 5. DEFINE DEPENDENCIES
 
 Create a dependency graph:
 
@@ -76,7 +108,7 @@ Create a dependency graph:
 - Ensure no circular dependencies
 - Mark critical path items
 
-## 5. GENERATE PLAN DOCUMENT
+## 6. GENERATE PLAN DOCUMENT
 
 Create the implementation plan with this structure:
 
@@ -92,19 +124,28 @@ Create the implementation plan with this structure:
 
 [Brief summary of what will be built and approach]
 
+## Sequential Thinking Summary
+
+[Document the decomposition process:]
+
+- **Initial approach**: [How you first planned to break down the work]
+- **Revisions made**: [Issues that were split, merged, or reordered]
+- **Key insights**: [What the thinking process revealed about dependencies/risks]
+
 ## Phases
 
-| Phase | Name | Description | Issues |
-|-------|------|-------------|--------|
-| 1 | Foundation | Setup and core infrastructure | #1-#7 |
-| 2 | Core Domain | Core models and business logic | #8-#15 |
-| 3 | Services | Service layer implementation | #16-#22 |
-| 4 | API/Interface | External interfaces | #23-#28 |
-| 5 | Integration & Polish | Final integration, edge cases | #29-#35 |
+| Phase | Name          | Description                        | Issues     |
+| ----- | ------------- | ---------------------------------- | ---------- |
+| 1     | Foundation    | Setup and core infrastructure      | 1.1-1.7    |
+| 2     | Core Domain   | Core models and business logic     | 2.1-2.8    |
+| 3     | Services      | Service layer implementation       | 3.1-3.7    |
+| 4     | API/Interface | External interfaces                | 4.1-4.6    |
+| 5     | Integration   | Final integration, edge cases      | 5.1-5.7    |
 
 ## Issue Backlog
 
-### Issue #1: [Title]
+### Issue 1.1: [Title]
+
 - **Phase**: 1 - Foundation
 - **Type**: Setup
 - **Description**: [What needs to be done]
@@ -115,24 +156,26 @@ Create the implementation plan with this structure:
 - **Dependencies**: None
 - **Tests**: [What tests to write]
 
-### Issue #2: [Title]
+### Issue 1.2: [Title]
+
 - **Phase**: 1 - Foundation
 - **Type**: [Type]
 - **Description**: [What needs to be done]
 - **Acceptance Criteria**:
   - [ ] [Criterion 1]
 - **Files**: [Expected files]
-- **Dependencies**: #1
+- **Dependencies**: 1.1
 - **Tests**: [Test requirements]
 
-### Issue #8: [Title]
+### Issue 2.1: [Title]
+
 - **Phase**: 2 - Core Domain
 - **Type**: Core
 - **Description**: [What needs to be done]
 - **Acceptance Criteria**:
   - [ ] [Criterion 1]
 - **Files**: [Expected files]
-- **Dependencies**: #3, #5
+- **Dependencies**: 1.3, 1.5
 - **Tests**: [Test requirements]
 
 [Continue for all issues...]
@@ -140,24 +183,24 @@ Create the implementation plan with this structure:
 ## Dependency Graph
 
 ```text
-Phase 1: [#1] -> [#2] -> [#3]
-                    \
-Phase 2:             -> [#8] -> [#9]
-                           \
-Phase 3:                    -> [#16] -> [#17]
+Phase 1: [1.1] -> [1.2] -> [1.3]
+                      \
+Phase 2:               -> [2.1] -> [2.2]
+                              \
+Phase 3:                       -> [3.1] -> [3.2]
 ```
 
 ## Critical Path
 
 [List the sequence of issues that determines minimum timeline]
 
-#1 -> #2 -> #8 -> #16 -> #23
+`1.1 -> 1.2 -> 2.1 -> 3.1 -> 4.1`
 
 ## Risk Items
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| [Risk] | [Impact] | [How to address] |
+| Risk   | Impact   | Mitigation         |
+| ------ | -------- | ------------------ |
+| [Risk] | [Impact] | [How to address]   |
 
 ## Open Questions
 
@@ -165,16 +208,16 @@ Phase 3:                    -> [#16] -> [#17]
 
 ## Summary
 
-| Metric | Count |
-|--------|-------|
-| Total Issues | [N] |
-| Phase 1 (Foundation) | [n] |
-| Phase 2 (Core Domain) | [n] |
-| ... | ... |
-| Critical Path Length | [n] |
+| Metric                   | Count |
+| ------------------------ | ----- |
+| Total Issues             | [N]   |
+| Phase 1 (Foundation)     | [n]   |
+| Phase 2 (Core Domain)    | [n]   |
+| ...                      | ...   |
+| Critical Path Length     | [n]   |
 ```
 
-## 6. WRITE OUTPUT
+## 7. WRITE OUTPUT
 
 1. Write to `implementation-plan.md` in the same directory as the requirements file
 2. Report total issue count and phase breakdown
@@ -184,11 +227,34 @@ Phase 3:                    -> [#16] -> [#17]
 
 ## Guidelines
 
-- **Simple numbering**: Use #1, #2, #3... to align with GitHub issue numbers
-- **Phase as metadata**: Each issue has a Phase field, not a phase-prefixed ID
+- **Phase-prefixed numbering**: Use X.Y format (phase.sequence) for clear distinction from GitHub numbers
+- **Self-documenting IDs**: Issue 2.3 = Phase 2, issue 3 within that phase
 - **Keep issues small**: An AI agent should complete each in one session
-- **Clear dependencies**: Every issue explicitly lists what it depends on (e.g., "Dependencies: #3, #5")
+- **Clear dependencies**: Every issue explicitly lists what it depends on (e.g., "Dependencies: 1.3, 1.5")
 - **Testable**: Each issue includes specific test requirements
 - **TDD-ready**: Issues are structured for Red-Green-Refactor workflow
 - **No gaps**: The sum of all issues should fully implement the requirements
 - **GitHub-ready**: Issue format is designed for easy translation to GitHub issues
+- **Document thinking**: Include the Sequential Thinking Summary to show decomposition rationale
+
+## Sequential Thinking Integration Points
+
+| Planning Phase           | When to Use Sequential Thinking                      |
+| ------------------------ | ---------------------------------------------------- |
+| Feature mapping          | Complex features spanning multiple components        |
+| Dependency analysis      | Unclear build order or circular dependency risk      |
+| Issue sizing             | Features that may need splitting or combining        |
+| Critical path finding    | Multiple potential paths through the dependency graph |
+| Risk identification      | Integration points or external dependencies          |
+
+## Troubleshooting
+
+If the decomposition feels wrong or incomplete:
+
+1. **Use Sequential Thinking** to diagnose:
+   - Set `isRevision: true` to reconsider earlier decisions
+   - Use `branchFromThought` to explore alternative orderings
+   - Continue until decomposition feels natural and complete
+
+2. Update the plan with revised issues
+3. Re-verify that all requirements are covered
