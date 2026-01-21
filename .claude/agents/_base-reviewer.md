@@ -68,3 +68,27 @@ Flag these as High severity when found:
 - Interfaces with single implementations
 - Comments explaining "why this might be needed later"
 - Premature optimization without profiling evidence
+
+## Sequential Thinking for Complex Reviews
+
+**Use `mcp__sequential-thinking__sequentialthinking`** when the review involves:
+
+- **Complex code flows** - Tracing execution through multiple files/functions
+- **Severity judgments** - Deciding if something is Critical vs High vs Medium
+- **Tradeoff analysis** - Weighing competing concerns (simplicity vs safety, etc.)
+- **Pattern detection** - Determining if repeated issues form a systemic problem
+
+### When to Use (estimate 3-5 thoughts)
+
+1. **Initial assessment** - What type of change is this? What's the risk profile?
+2. **Deep analysis** - For findings that aren't clear-cut, think through implications
+3. **Severity calibration** - Is this really Critical, or am I being too cautious?
+4. **Revision if needed** - Use `isRevision: true` if initial assessment was wrong
+
+### When NOT to Use
+
+- Clear-cut issues (obvious bugs, missing type hints)
+- Simple PRs with few changes
+- Issues that match established patterns exactly
+
+Each specialist agent below includes specific sequential thinking guidance for their domain.

@@ -21,7 +21,37 @@ Read and analyze the requirements document to identify:
 - **Integrations**: External systems, APIs, services
 - **Non-Functional Requirements**: Performance, security, scalability constraints
 
-## 3. GENERATE ARCHITECTURE DOCUMENT
+## 3. USE SEQUENTIAL THINKING FOR ARCHITECTURAL DECISIONS
+
+**REQUIRED**: Use `mcp__sequential-thinking__sequentialthinking` to work through key architectural decisions:
+
+### Initial Analysis (estimate 6-10 thoughts)
+
+1. **Understand the domain** - What are the core concepts and relationships?
+2. **Identify boundaries** - Where should component boundaries be drawn?
+3. **Evaluate trade-offs** - What tensions exist between requirements?
+4. **Generate hypotheses** - Propose component structure and verify against requirements
+5. **Revise as needed** - Use `isRevision: true` when earlier assumptions prove wrong
+
+### Key Questions to Resolve
+
+- What is the simplest architecture that meets all requirements?
+- Where are the likely change points? (Keep these loosely coupled)
+- What are the hard constraints vs. preferences?
+- Are there existing patterns in the codebase to follow?
+
+### When to Branch Thinking
+
+Use `branchFromThought` when facing decisions like:
+
+- Monolith vs. microservices
+- Sync vs. async communication
+- SQL vs. NoSQL data storage
+- Build vs. buy for integrations
+
+Document the decision rationale in the architecture output.
+
+## 4. GENERATE ARCHITECTURE DOCUMENT
 
 Create the architecture document with these sections:
 
@@ -42,6 +72,7 @@ Create the architecture document with these sections:
 [Describe each major component/module:]
 
 ### [Component Name]
+
 - **Responsibility**: What this component does
 - **Interfaces**: How other components interact with it
 - **Dependencies**: What it depends on
@@ -57,14 +88,14 @@ Create the architecture document with these sections:
 
 ## Tech Stack
 
-| Layer | Technology | Rationale |
-|-------|------------|-----------|
-| Language | Python 3.11+ | [reason based on requirements] |
-| [Layer] | [Tech] | [reason] |
+| Layer    | Technology   | Rationale                       |
+| -------- | ------------ | ------------------------------- |
+| Language | Python 3.11+ | [reason based on requirements]  |
+| [Layer]  | [Tech]       | [reason]                        |
 
 ## Directory Structure
 
-```
+```text
 src/[project_name]/
 ├── core/           # Core domain logic
 ├── api/            # API layer
@@ -79,16 +110,24 @@ tests/
 
 ## Key Design Decisions
 
-| Decision | Rationale | Alternatives Considered |
-|----------|-----------|------------------------|
-| [Decision] | [Why] | [What else was considered] |
+| Decision   | Rationale | Alternatives Considered    |
+| ---------- | --------- | -------------------------- |
+| [Decision] | [Why]     | [What else was considered] |
+
+## Sequential Thinking Summary
+
+[Document the key insights from the sequential thinking process:]
+
+- **Initial hypothesis**: [What you first thought the architecture should be]
+- **Revisions made**: [How understanding evolved]
+- **Final rationale**: [Why this architecture was chosen]
 
 ## Open Questions
 
 [List any ambiguities or decisions that need stakeholder input]
 ```
 
-## 4. WRITE OUTPUT
+## 5. WRITE OUTPUT
 
 1. Write the generated document to `architecture.md` in the same directory as the input file
 2. Inform the user of the output location
@@ -102,3 +141,14 @@ tests/
 - **Stay minimal**: Only include components needed by the requirements
 - **Follow project philosophy**: Apply Kent Beck's principles (simplest thing that works)
 - **Flag uncertainties**: Use "Open Questions" for anything requiring clarification
+- **Document thinking**: Include the Sequential Thinking Summary to show decision rationale
+
+## Sequential Thinking Integration Points
+
+| Analysis Phase              | When to Use Sequential Thinking                    |
+| --------------------------- | -------------------------------------------------- |
+| Domain understanding        | Complex domain with many entities                  |
+| Component boundaries        | Unclear where to draw lines between modules        |
+| Technology selection        | Multiple valid options with different trade-offs   |
+| Integration design          | External systems with complex interfaces           |
+| Resolving requirement conflicts | Requirements that seem to pull in different directions |

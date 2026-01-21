@@ -7,9 +7,9 @@ Merge PR $ARGUMENTS and clean up associated branches.
 
 **IMPORTANT:** Execute these as SEPARATE Bash calls (do NOT use shell variable assignment with `$(...)` in a single call):
 
-1. Merge the PR (squash merge):
+1. Merge the PR:
 ```bash
-gh pr merge $ARGUMENTS --delete-branch
+gh pr merge $ARGUMENTS --merge --delete-branch
 ```
 
 2. Switch to main and pull latest:
