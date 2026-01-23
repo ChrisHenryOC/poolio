@@ -95,7 +95,7 @@ Extract from each issue section:
 
 Build a data structure:
 
-```
+```text
 issues = [
   {
     plan_id: "1.1",
@@ -156,7 +156,7 @@ EOF
 
 **Build the mapping** by parsing each response URL:
 
-```
+```text
 mapping = {}  # plan_id (X.Y format) -> github_issue_number
 
 # After "gh issue create" returns:
@@ -223,7 +223,7 @@ EOF
 
 1. **Generate summary report**
 
-   ```
+   ```text
    ## Issue Creation Summary
 
    Total issues created: 35
@@ -278,19 +278,19 @@ If errors occur during issue creation, **use Sequential Thinking** to diagnose a
 
 ## Example Usage
 
-```
+```text
 /create-git-issues docs/implementation-plan.md
 ```
 
 Or with default path:
 
-```
+```text
 /create-git-issues
 ```
 
 ## Workflow Summary
 
-```
+```text
 1. Validate file (check for ### Issue X.Y: pattern)
    ↓
 2. Parse implementation plan (extract X.Y plan IDs)
