@@ -1,6 +1,7 @@
 # Implementation Plan: Poolio Rearchitecture (Phases 1-4)
 
 > Generated from:
+>
 > - Requirements: docs/requirements.md
 > - Architecture: docs/architecture.md
 > - UI Design: docs/display-node-ui-design.md
@@ -25,10 +26,12 @@ The plan decomposes the work into 71 issues (67 MVP + 4 deferred) suitable for f
 **Initial approach**: Started by mapping the architecture document's build sequence (Section 15) to concrete implementation tasks, then decomposed each phase into issues sized for 1-2 hour sessions.
 
 **Revisions made**:
+
 - Split the Dashboard Controller (originally one issue) into three parts: local sensors, state management, and MQTT/navigation - the original was too large for a single session
 - Grouped cloud client implementations (HTTP and MQTT) as separate issues since they serve different node types and have distinct testing requirements
 
 **Kent Beck alignment revision (2026-01-23)**:
+
 - Defer abstractions: CloudBackend base class extracted only when second implementation (MQTT) is added
 - Defer full jsonschema validation to Phase 4+ (use simple required-field checks on-device)
 - Defer command rate limiting to Phase 4+ (implement only if abuse detected)
@@ -37,6 +40,7 @@ The plan decomposes the work into 71 issues (67 MVP + 4 deferred) suitable for f
 - Keep burn-in prevention (observed issue in legacy implementation)
 
 **Key insights**:
+
 - Phase 2 sub-phases (2a, 2b, 2c) can be parallelized since they target different node types
 - The C++ Pool Node requires its own message library implementation (can't share Python code)
 - Simulators (Phase 3) enable testing even before all hardware nodes are complete
@@ -60,7 +64,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 ## Phases
 
 | Phase | Name | Description | Issues |
-|-------|------|-------------|--------|
+| ----- | ---- | ----------- | ------ |
 | 1 | Foundation | Shared libraries, messages, cloud abstraction | 1.1-1.11 |
 | 2a | Pool Node | C++ sensor node with deep sleep | 2.1-2.11 |
 | 2b | Valve Node | CircuitPython fill controller | 2.12-2.15, 2.18-2.19 (4.16-4.17 deferred) |
@@ -636,7 +640,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Type**: Core
 - **Description**: Implement FillScheduler class for fill window logic per FR-VN-002.
 - **Acceptance Criteria**:
-  - [ ] FillScheduler.__init__(start_time, window_hours, check_interval)
+  - [ ] FillScheduler.**init**(start_time, window_hours, check_interval)
   - [ ] start_time as "HH:MM" string (zero-padded)
   - [ ] is_within_window(current_time) returns bool
   - [ ] next_check_time() returns adafruit_datetime for next eligibility check
@@ -656,7 +660,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Type**: Core
 - **Description**: Implement SafetyInterlocks class for all fill safety checks per FR-VN-003.
 - **Acceptance Criteria**:
-  - [ ] SafetyInterlocks.__init__(config)
+  - [ ] SafetyInterlocks.**init**(config)
   - [ ] check_data_freshness(pool_msg, now) - verifies pool data within staleness threshold
   - [ ] Staleness threshold = poolNodeInterval × stalenessMultiplier (default 2)
   - [ ] check_water_level(pool_msg) - returns (ok, reason) based on floatSwitch
@@ -677,7 +681,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Type**: Core
 - **Description**: Implement ValveController class for GPIO control and state machine.
 - **Acceptance Criteria**:
-  - [ ] ValveController.__init__(config, cloud, logger)
+  - [ ] ValveController.**init**(config, cloud, logger)
   - [ ] GPIO D11 controls solenoid valve (HIGH = open, LOW = close)
   - [ ] State machine: idle → filling → idle
   - [ ] start_fill(trigger) opens valve, publishes fill_start message
@@ -822,7 +826,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Type**: Core
 - **Description**: Implement touch input handling with STMPE610, calibration, and debouncing per FR-DN-008.
 - **Acceptance Criteria**:
-  - [ ] TouchHandler.__init__(touch_controller, screen_width, screen_height)
+  - [ ] TouchHandler.**init**(touch_controller, screen_width, screen_height)
   - [ ] Configurable calibration values from config.json
   - [ ] get_touch() returns (x, y) tuple or None
   - [ ] 250ms debounce between registered taps
@@ -1047,7 +1051,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Type**: Integration
 - **Description**: Implement Dashboard controller for receiving and processing MQTT messages.
 - **Acceptance Criteria**:
-  - [ ] Dashboard.__init__(config, cloud, display, touch)
+  - [ ] Dashboard.**init**(config, cloud, display, touch)
   - [ ] Subscribes to gateway feed for all status messages
   - [ ] Fetches latest gateway value on startup before subscribing
   - [ ] handle_message(message) updates state and refreshes display
@@ -1753,6 +1757,7 @@ Within phases, the critical paths are:
 **Phase 4**: `4.1 → 4.3 → 4.5 → 4.7 → 4.8 → 4.9 → ... → 4.14` (sequential deployment steps)
 
 **Parallelization Opportunities**:
+
 - Phase 2a, 2b, 2c can all run in parallel after Phase 1 completes
 - Within Phase 1: Cloud clients (1.5-1.7) parallel with Config/Logging (1.8-1.10)
 - Phase 3 simulators (3.2-3.4) can develop in parallel
@@ -1802,6 +1807,7 @@ All questions from architecture.md Section "Resolved Questions" have been addres
 | **Parallelizable Work** | Phase 2a/2b/2c, Phase 3 simulators |
 
 **Kent Beck Alignment Notes**:
+
 - Deferred 4 features (rate limiting, legacy support, full schema validation, captive portal provisioning) per "no just-in-case code"
 - Added UI spike per "make it work first"
 - Defer abstractions: CloudBackend base class extracted only when needed (Issue 1.7)

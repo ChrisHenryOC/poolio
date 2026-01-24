@@ -25,7 +25,7 @@ This command synthesizes requirements analysis, codebase pattern extraction, and
 Search for existing code patterns:
 
 - **Project structure**: `Glob` for `src/**/*.py`, `src/**/*.cpp`, `lib/**/*`
-- **Existing abstractions**: `Grep` for `class `, `interface `, `abstract`
+- **Existing abstractions**: `Grep` for `class`, `interface`, `abstract`
 - **Configuration patterns**: Look for `config.json`, `settings.toml`, `*.ini`
 - **Test patterns**: `Grep` in `tests/` for testing conventions
 - **Similar features**: Find implementations of related functionality
@@ -277,7 +277,7 @@ class ComponentName:
 
 **Structure:**
 
-```
+```text
 component/
 ├── __init__.py
 ├── main.py          # Entry point
@@ -310,7 +310,7 @@ project/
 
 ### [Flow Name] Flow
 
-```
+```text
 [Component A]              [Component B]              [Component C]
      │                          │                          │
      │── [action] ─────────────>│                          │
@@ -467,7 +467,7 @@ def pattern_example():
 
 **File Structure After Deployment:**
 
-```
+```text
 [target]/
 ├── [file]
 └── ...
@@ -569,12 +569,14 @@ jobs:
 ### Source Control & Secrets
 
 **Files to gitignore:**
+
 ```gitignore
 # Secrets
 [pattern]
 ```
 
 **Template files to commit:**
+
 | Template | Actual | Purpose |
 |----------|--------|---------|
 | [.template file] | [actual file] | [What it contains] |
@@ -609,7 +611,6 @@ jobs:
 [List any ambiguities or decisions requiring stakeholder input]
 
 1. **[Question]** - [Context and options being considered]
-```
 
 ---
 

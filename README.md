@@ -50,7 +50,7 @@ This project follows Test-Driven Development:
 
 ## Project Structure
 
-```
+```text
 ├── docs/               # Documentation
 └── src/[project_name]/
     ├── core/           # Core domain logic

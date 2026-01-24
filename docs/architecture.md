@@ -38,7 +38,7 @@ Poolio is a distributed IoT pool automation and monitoring platform consisting o
 
 ### System Architecture Diagram
 
-```
+```text
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │   Pool Node     │     │   Valve Node     │     │  Display Node   │
 │  (Sensor Unit)  │     │ (Fill Controller)│     │   (Dashboard)   │
@@ -149,7 +149,7 @@ This architecture evolved through several iterations:
 
 *Note: Full jsonschema validation is **DEFERRED** to Phase 4+ per Kent Beck's "fewest elements" principle. Start with simplified required-field validation on-device. JSON Schema files and strict mode (`validate_message(json_str, strict=True)`) will be added only if simple validation proves insufficient for debugging message format issues.*
 
-```
+```text
 src/shared/messages/
 ├── __init__.py          # Public API exports
 ├── types.py             # Message type classes (plain classes, not dataclasses)
@@ -211,7 +211,7 @@ def validate_envelope(envelope):
 
 #### Cloud Module
 
-```
+```text
 src/shared/cloud/
 ├── __init__.py
 ├── base.py              # CloudBackend base class (duck typing, no abc module)
@@ -299,7 +299,7 @@ class AdafruitIOMQTT(CloudBackend):
 
 #### Config Module
 
-```
+```text
 src/shared/config/
 ├── __init__.py
 ├── loader.py            # Load config from sources
@@ -508,7 +508,7 @@ Sources: [Adafruit Logger Library Documentation](https://docs.circuitpython.org/
 
 #### Sensors Module
 
-```
+```text
 src/shared/sensors/
 ├── __init__.py
 ├── retry.py             # Retry with exponential backoff
@@ -571,7 +571,7 @@ def recover_onewire_bus(data_pin):
 
 **Lifecycle:**
 
-```
+```text
 Wake → Init Watchdog → WiFi Connect → Sync Time → Read Sensors → Transmit → Cleanup → Sleep
               ↓              ↓            ↓            ↓           ↓
          [feed watchdog at each stage, max 15s intervals]
@@ -579,7 +579,7 @@ Wake → Init Watchdog → WiFi Connect → Sync Time → Read Sensors → Trans
 
 **Structure:**
 
-```
+```text
 pool_node_cpp/
 ├── platformio.ini
 ├── src/
@@ -635,7 +635,7 @@ pool_node_cpp/
 
 **Structure:**
 
-```
+```text
 src/valve_node/
 ├── code.py                    # Entry point
 ├── config.json                # Node configuration
@@ -803,7 +803,7 @@ During migration (if needed), the Valve Node accepts both JSON and legacy pipe-d
 
 **Structure:**
 
-```
+```text
 src/display_node/
 ├── code.py                    # Entry point
 ├── config.json                # Node configuration
@@ -913,7 +913,7 @@ python -m poolio.simulators.display_node --environment nonprod
 
 **Structure:**
 
-```
+```text
 src/simulators/
 ├── __init__.py
 ├── pool_node.py               # Pool node simulator
@@ -949,7 +949,7 @@ src/simulators/
 
 **Structure:**
 
-```
+```text
 homebridge/
 ├── src/
 │   ├── platform.ts            # Homebridge platform plugin
@@ -1012,7 +1012,7 @@ mqtt:
 
 ## Directory Structure
 
-```
+```text
 poolio_rearchitect/
 ├── src/
 │   ├── shared/                    # Shared libraries (Python)
@@ -1127,7 +1127,7 @@ poolio_rearchitect/
 
 ### Sensor Data Collection Flow
 
-```
+```text
 Pool Node                    Cloud (Adafruit IO)              Valve Node / Display Node
     │                              │                                    │
     │── pool_status (HTTPS) ──────>│                                    │
@@ -1139,7 +1139,7 @@ Pool Node                    Cloud (Adafruit IO)              Valve Node / Displ
 
 ### Fill Operation Flow
 
-```
+```text
 Valve Node                   Cloud (Adafruit IO)              Display Node
     │                              │                                    │
     │<── pool_status (MQTT) ───────│<── pool_status (HTTPS) ── Pool Node
@@ -1169,7 +1169,7 @@ Valve Node                   Cloud (Adafruit IO)              Display Node
 
 ### Command Flow
 
-```
+```text
 Display Node                 Cloud (Adafruit IO)              Valve Node
     │                              │                                    │
     │── command (MQTT) ───────────>│── gateway (MQTT) ─────────────────>│
@@ -1181,7 +1181,7 @@ Display Node                 Cloud (Adafruit IO)              Valve Node
 
 ### HomeKit Integration Flow
 
-```
+```text
 Poolio Nodes                 Cloud (Adafruit IO)              Homebridge              Apple Home
     │                              │                              │                        │
     │── status messages ──────────>│── MQTT ─────────────────────>│                        │
@@ -1365,6 +1365,7 @@ All messages use a standard envelope:
 ### Example Messages
 
 **pool_status:**
+
 ```json
 {
   "version": 2,
@@ -1390,6 +1391,7 @@ All messages use a standard envelope:
 ```
 
 **command:**
+
 ```json
 {
   "version": 2,
@@ -1689,7 +1691,7 @@ Feeds are organized into groups. Full feed name format: `{group}.{feed}`
 
 ### Feed Name Resolution
 
-```
+```text
 Logical Name    Environment    Full Feed Name
 ────────────    ───────────    ──────────────────────
 gateway         prod           poolio.gateway
