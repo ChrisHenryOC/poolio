@@ -112,7 +112,7 @@ Create a dependency graph:
 
 Create the implementation plan with this structure:
 
-```markdown
+````markdown
 # Implementation Plan: [Project Name]
 
 > Generated from:
@@ -215,7 +215,8 @@ Phase 3:                       -> [3.1] -> [3.2]
 | Phase 2 (Core Domain)    | [n]   |
 | ...                      | ...   |
 | Critical Path Length     | [n]   |
-```
+
+````
 
 ## 7. WRITE OUTPUT
 
@@ -239,13 +240,13 @@ Phase 3:                       -> [3.1] -> [3.2]
 
 ## Sequential Thinking Integration Points
 
-| Planning Phase           | When to Use Sequential Thinking                      |
-| ------------------------ | ---------------------------------------------------- |
-| Feature mapping          | Complex features spanning multiple components        |
-| Dependency analysis      | Unclear build order or circular dependency risk      |
-| Issue sizing             | Features that may need splitting or combining        |
-| Critical path finding    | Multiple potential paths through the dependency graph |
-| Risk identification      | Integration points or external dependencies          |
+| Planning Phase        | When to Use Sequential Thinking                       |
+| --------------------- | ----------------------------------------------------- |
+| Feature mapping       | Complex features spanning multiple components         |
+| Dependency analysis   | Unclear build order or circular dependency risk       |
+| Issue sizing          | Features that may need splitting or combining         |
+| Critical path finding | Multiple potential paths through the dependency graph |
+| Risk identification   | Integration points or external dependencies           |
 
 ## Troubleshooting
 

@@ -4,86 +4,325 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-[PROJECT_NAME] - [Brief description of the project]
+**Poolio Rearchitecture** - A distributed IoT pool automation and monitoring system being rearchitected from three existing CircuitPython projects (PoolIO-ValveNode, Poolio-PoolNode, Poolio-DisplayNode).
 
-## Development Philosophy
+### Original Projects (Reference)
 
-This project follows **Kent Beck's principles** for software development:
+- `~/source/Poolio-PoolNode` - Battery-powered pool sensor (temperature, water level, battery)
+- `~/source/PoolIO-ValveNode` - Fill valve controller with scheduling
+- `~/source/Poolio-DisplayNode` - TFT touchscreen dashboard
 
-1. **Make it work, make it right, make it fast** - in that order
-2. **Four Rules of Simple Design**: Tests pass → Reveals intention → No duplication → Fewest elements
-3. **TDD (Test-Driven Development)**: Red → Green → Refactor
+### System Purpose
 
-See `.claude/references/kent-beck-principles.md` for detailed guidance.
+Automated pool water management:
 
-## Commands
+- Monitor pool temperature and water level
+- Automatically fill pool on schedule when water is low
+- Control variable speed pump (future)
+- Display status on touchscreen dashboard
+- Integrate with Apple HomeKit
 
-```bash
-# Install dependencies
-poetry install
+## Documentation
 
-# Run tests
-poetry run pytest
-poetry run pytest tests/unit/  # unit tests only
-poetry run pytest -k "test_name"  # single test
+**`docs/requirements.md`** - Comprehensive requirements including:
 
-# Type checking
-poetry run mypy src/
+- Functional requirements for each node type
+- Reliability requirements (especially Pool Node)
+- JSON message format specification
+- Cloud backend abstraction (Adafruit IO with pluggable backends)
+- Device extensibility architecture (plugin system for new devices)
+- Apple HomeKit integration
+- Implementation language considerations (CircuitPython vs C++)
 
-# Linting and formatting
-poetry run ruff check src/ tests/
-poetry run ruff format src/ tests/
+**`docs/architecture.md`** - System architecture and implementation details:
+
+- Component design and interfaces
+- CircuitPython compatibility patterns (Section 8)
+- Message protocol specification
+- Reliability patterns (watchdog, retry, bus recovery)
+- Environment configuration
+- Deployment procedures
+- Build sequence and phases
+
+## Target Hardware
+
+| Node         | MCU                | Key Hardware                                                    |
+| ------------ | ------------------ | --------------------------------------------------------------- |
+| Pool Node    | ESP32 (Feather)    | DS18X20 temp sensor, float switch, LC709203F battery gauge      |
+| Valve Node   | ESP32-S3 (Feather) | DS18X20 temp sensor, solenoid valve relay                       |
+| Display Node | ESP32 (Feather)    | ILI9341 TFT display, STMPE610 touchscreen, AHTx0 temp/humidity  |
+| Pump Node    | TBD                | RS-485 interface for variable speed pump                        |
+
+## Architecture Principles
+
+### Communication
+
+- All nodes communicate via **JSON messages** over MQTT (Adafruit IO)
+- Standardized message envelope: `{version, type, deviceId, timestamp, payload}`
+- Cloud backend is abstracted to support alternative providers (AWS IoT, etc.)
+
+### Language Flexibility
+
+Both **CircuitPython** and **C++ (Arduino/ESP-IDF)** are valid implementation choices:
+
+- Pool Node: Prefer C++ for reliability (timeout control, bus recovery)
+- Display Node: Prefer CircuitPython for rapid UI iteration
+- Other nodes: Evaluate based on specific requirements
+
+### Device Plugin Architecture
+
+New device types can be added via configuration without core code changes:
+
+- Devices declare capabilities (sensors, commands)
+- Display Node dynamically generates UI based on capabilities
+- Inter-device communication for coordination (e.g., valve + pump)
+
+## Project Structure
+
+```text
+poolio_rearchitect/
+├── .claude/
+│   ├── agents/              # Code review agent definitions
+│   ├── commands/            # Slash command definitions
+│   ├── memories/            # Persistent context/patterns
+│   └── references/          # Reference documentation
+├── docs/
+│   ├── requirements.md      # Comprehensive requirements document
+│   └── architecture.md      # System architecture and implementation details
+├── CLAUDE.md                # This file - project guidance
+└── README.md                # Project overview
 ```
 
-## Architecture
+### Future Structure (to be created during implementation)
 
+```text
+poolio_rearchitect/
+├── src/
+│   ├── shared/              # Shared libraries (CircuitPython compatible)
+│   │   ├── messages/        # JSON message protocol
+│   │   ├── cloud/           # Cloud backend abstraction
+│   │   ├── config/          # Configuration management
+│   │   ├── logging/         # Structured logging (adafruit_logging)
+│   │   └── sensors/         # Sensor retry and bus recovery
+│   ├── valve_node/          # Valve controller (CircuitPython)
+│   ├── display_node/        # Display dashboard (CircuitPython)
+│   └── simulators/          # Desktop simulators (CPython)
+├── pool_node_cpp/           # Pool sensor (C++/PlatformIO)
+├── homebridge/              # Homebridge plugin for HomeKit (Node.js)
+├── schemas/                 # JSON schemas for validation
+└── tests/                   # Unit and integration tests
 ```
-├── docs/               # Documentation
-└── src/[project_name]/
-    ├── core/           # Core domain logic
-    ├── api/            # API layer (if applicable)
-    ├── services/       # Business logic services
-    ├── models/         # Data models
-    └── utils/          # Utilities
-```
+
+**See `docs/architecture.md` Section 5 (Directory Structure)** for complete file layout.
 
 ## Development Workflow
 
-### TDD Cycle
+### For CircuitPython Nodes
 
-For every new feature or bug fix:
+```bash
+# Deploy to device (when connected via USB)
+# Files are copied directly to CIRCUITPY drive
+rsync -av --exclude='*.pyc' src/pool_node/ /Volumes/CIRCUITPY/
 
-1. **Red**: Write a failing test first
-2. **Green**: Write minimal code to pass the test
-3. **Refactor**: Clean up while tests stay green
+# Monitor serial output
+screen /dev/tty.usbmodem* 115200
+# Exit: Ctrl+A, K, Y
+```
 
-### Slash Commands
+### For C++ Nodes (Arduino/PlatformIO)
 
-Use the provided slash commands:
-- `/review-pr [number]` - Review a pull request
-- `/fix-review [number]` - Fix issues from code review
-- `/implement-issue [number]` - Work on a GitHub issue
-- `/merge-pr [number]` - Merge and clean up
-- `/create-architecture` - Create architecture document
-- `/create-git-issues` - Create GitHub issues from plan
-- `/create-implementation-plan` - Create implementation plan
+```bash
+# Build
+pio run
+
+# Upload
+pio run --target upload
+
+# Monitor
+pio device monitor
+```
+
+### For Homebridge Plugin
+
+```bash
+cd homebridge/
+npm install
+npm run build
+npm link  # For local testing
+```
+
+## Key Design Decisions
+
+### Reliability (Pool Node)
+
+- Watchdog timer with feeds at ≤25% of timeout
+- Explicit timeouts on all blocking operations
+- Bus recovery mechanisms (I2C, OneWire)
+- Proper resource cleanup before deep sleep
+- No bare `except:` clauses - always catch specific exceptions
+
+### Message Protocol
+
+- JSON format for extensibility and debugging
+- MQTT broker (Adafruit IO) handles message ordering and deduplication
+- Backward compatibility with legacy pipe-delimited format during migration
+
+### Configuration
+
+- Hardware pin mappings in config files, not code
+- Remote configuration via cloud backend
+- Schema validation for all configuration
+
+### Environments
+
+The system supports multiple deployment environments:
+
+**Two-environment model:**
+
+| Environment | Feed Prefix | Hardware     | Use Case                    |
+| ----------- | ----------- | ------------ | --------------------------- |
+| `prod`      | (none)      | Enabled      | Live production system      |
+| `nonprod`   | `nonprod-`  | Configurable | Development and testing     |
+
+**Three-environment model (if needed):**
+
+| Environment | Feed Prefix | Hardware     | Use Case                    |
+| ----------- | ----------- | ------------ | --------------------------- |
+| `dev`       | `dev-`      | Disabled     | Local development           |
+| `test`      | `test-`     | Configurable | Integration testing         |
+| `prod`      | (none)      | Enabled      | Live production system      |
+
+- Environment is set in `settings.toml` (CircuitPython) or build config (C++)
+- Feed names are automatically prefixed: `nonprod-pooltemp`, `nonprod-gateway`, etc.
+- Non-prod environments show visual indicator on Display Node
+- Hardware can be disabled per environment (valve commands logged but not executed)
 
 ## Code Standards
 
-- **Type hints**: Required on all function signatures
-- **Testing**: All new code must have tests
-- **Simplicity**: Avoid over-engineering; build only what's needed
-- **Clarity**: Code should reveal its intention without excessive comments
+### CircuitPython
+
+- Feed watchdog before/after blocking operations
+- Close all resources (sockets, responses, buses) explicitly
+- Use `try/finally` for cleanup
+- Log all exceptions with context before handling
+
+#### CircuitPython Compatibility Constraints
+
+CircuitPython is a subset of Python with limited standard library. The following modules are **NOT available**:
+
+| Unavailable Module | Use Instead |
+|--------------------|-------------|
+| `dataclasses` | Plain classes with `__init__` |
+| `abc` (ABC, abstractmethod) | Duck typing with `NotImplementedError` |
+| `jsonschema` | Simplified manual validation on-device |
+| `typing` (Optional, Callable, etc.) | Type info in docstrings only |
+| `datetime` | `adafruit_datetime` library |
+| `logging` | `adafruit_logging` library |
+
+**Pattern Examples:**
+
+```python
+# WRONG - dataclass not available
+@dataclass
+class Temperature:
+    value: float
+
+# CORRECT - plain class
+class Temperature:
+    def __init__(self, value, unit="fahrenheit"):
+        self.value = value
+        self.unit = unit
+
+# WRONG - abc not available
+class CloudBackend(ABC):
+    @abstractmethod
+    def publish(self, feed, value): ...
+
+# CORRECT - duck typing
+class CloudBackend:
+    def publish(self, feed, value):
+        raise NotImplementedError("Subclasses must implement publish()")
+
+# WRONG - type hints in signatures
+def get_feed_name(logical_name: str, environment: str) -> str:
+
+# CORRECT - types in docstrings
+def get_feed_name(logical_name, environment):
+    """Get feed name. Args are strings, returns string."""
+```
+
+**See `docs/architecture.md` Section 8 (CircuitPython Compatibility)** for comprehensive patterns and dual-implementation strategy.
+
+### C++ (Arduino/ESP-IDF)
+
+- Use FreeRTOS tasks for timeout mechanisms
+- Implement proper I2C/OneWire bus recovery
+- Use ESP-IDF WiFi APIs for timeout control
+
+### All Languages
+
+- Structured logging with levels (DEBUG, INFO, WARNING, ERROR)
+- Include deviceId and timestamp in all log entries
+- Validate all incoming messages against schema
 
 ## Anti-Patterns to Avoid
 
-- Abstractions for single use cases
-- Premature optimization
-- "Just in case" code
-- Configuration for things that never change
-- Error handling for impossible states
+- Bare `except:` or `catch(...)` that hide errors
+- Blocking operations without timeouts
+- Global state without clear ownership
+- Hard-coded magic numbers (use configuration)
+- Assuming network operations will succeed
+- Skipping resource cleanup on error paths
+- Using `@dataclass`, `ABC`, or `typing` imports in CircuitPython code
+- Type hints in function signatures for CircuitPython (use docstrings instead)
+- Importing `jsonschema` on-device (use simplified validation)
 
-## Performance Targets
+## Testing Strategy
 
-- [Define specific performance targets if applicable]
-- Only optimize after profiling shows a bottleneck
+- Unit tests for message parsing/formatting
+- Unit tests for configuration validation
+- Integration tests require hardware (limited automation)
+- Mock cloud backend for offline testing
+
+## Sequential Thinking
+
+**Use `mcp__sequential-thinking__sequentialthinking`** for complex problem-solving tasks that benefit from structured reasoning.
+
+### When to Use
+
+| Scenario                     | Example                                                        |
+| ---------------------------- | -------------------------------------------------------------- |
+| **Architecture decisions**   | Choosing between CircuitPython vs C++ for a node               |
+| **Debugging complex issues** | Tracing intermittent sensor failures across hardware/software  |
+| **Implementation planning**  | Breaking down a feature into sized issues                      |
+| **Tradeoff analysis**        | Reliability vs battery life for Pool Node                      |
+| **Protocol design**          | Designing message formats for new device types                 |
+
+### How to Use
+
+1. **Start with an estimate** - How many thoughts needed? (typically 4-8)
+2. **Think step by step** - Each thought builds on previous insights
+3. **Revise when needed** - Use `isRevision: true` to reconsider earlier conclusions
+4. **Branch for alternatives** - Use `branchFromThought` when exploring multiple approaches
+5. **Adjust as you go** - Increase `totalThoughts` if problem is more complex than expected
+
+### Project-Specific Applications
+
+- **Reliability analysis**: Trace failure modes through watchdog → sensor → network → cloud
+- **Message protocol changes**: Think through backward compatibility implications
+- **Cross-node coordination**: Design valve + pump interaction sequences
+- **Error recovery**: Plan bus recovery and retry strategies
+
+### When NOT to Use
+
+- Simple, straightforward tasks (adding a config field, fixing a typo)
+- Well-understood patterns with clear implementations
+- Tasks where the solution is obvious from requirements
+
+## Migration Phases
+
+1. **Foundation**: Shared libraries, JSON messages, cloud abstraction
+2. **Device Framework**: Plugin architecture, migrate existing nodes
+3. **Extensibility**: Variable speed pump, inter-device communication
+4. **Smart Home**: Homebridge plugin for HomeKit
+5. **Reliability**: Enhanced error handling, observability
