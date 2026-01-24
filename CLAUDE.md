@@ -162,6 +162,18 @@ All changes must go through a branch and pull request before merging to main:
 
 Never push directly to the `main` branch.
 
+### Markdown Linting
+
+Run markdownlint on new or edited markdown files before committing:
+
+```bash
+npx markdownlint-cli docs/requirements.md
+npx markdownlint-cli docs/architecture.md
+npx markdownlint-cli **/*.md  # All markdown files
+```
+
+The project uses `.markdownlint.jsonc` for configuration. Fix any reported issues before committing. Files excluded via `.gitignore` do not need to be linted.
+
 ## Key Design Decisions
 
 ### Reliability (Pool Node)

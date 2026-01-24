@@ -1,64 +1,81 @@
-# Claude Code Python Template
+# Poolio Rearchitect
 
-A Python project template configured for use with Claude Code, following Kent Beck's principles for software development.
+A distributed IoT pool automation and monitoring system being rearchitected from three existing CircuitPython projects.
 
-## Features
+## System Overview
 
-- Poetry for dependency management
-- pytest for testing
-- mypy for type checking
-- ruff for linting and formatting
-- TDD workflow support
-- Claude Code slash commands for PR reviews, issue management, and more
+Poolio automates pool water management:
 
-## Getting Started
+- **Pool Node** - Battery-powered sensor monitoring pool temperature, water level, and battery status
+- **Valve Node** - Controls fill valve based on schedule and water level
+- **Display Node** - TFT touchscreen dashboard showing real-time status
+- **Pump Node** - Variable speed pump control (future)
 
-### Prerequisites
+All nodes communicate via JSON messages over MQTT (Adafruit IO).
 
-- Python 3.11+
-- [Poetry](https://python-poetry.org/docs/#installation)
-
-### Installation
-
-```bash
-poetry install
+```text
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   Pool Node     │     │   Valve Node     │     │  Display Node   │
+│  (Sensor Unit)  │     │ (Fill Controller)│     │   (Dashboard)   │
+└────────┬────────┘     └────────┬─────────┘     └────────┬────────┘
+         │                       │                        │
+         └───────────────────────┴────────────────────────┘
+                                 │
+                    ┌────────────┴────────────┐
+                    │      Adafruit IO        │
+                    │   (Cloud Message Broker)│
+                    └─────────────────────────┘
 ```
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [docs/requirements.md](docs/requirements.md) | Comprehensive system requirements |
+| [docs/architecture.md](docs/architecture.md) | System architecture and implementation details |
+| [CLAUDE.md](CLAUDE.md) | Development guidance for Claude Code |
+
+## Original Projects (Reference)
+
+This rearchitecture consolidates and improves upon:
+
+- `~/source/Poolio-PoolNode` - Original pool sensor
+- `~/source/PoolIO-ValveNode` - Original valve controller
+- `~/source/Poolio-DisplayNode` - Original display dashboard
+
+## Target Hardware
+
+| Node | MCU | Key Components |
+|------|-----|----------------|
+| Pool Node | ESP32 Feather | DS18X20 temp, float switch, LC709203F battery gauge |
+| Valve Node | ESP32-S3 Feather | DS18X20 temp, solenoid valve relay |
+| Display Node | ESP32 Feather | ILI9341 TFT, STMPE610 touch, AHTx0 temp/humidity |
 
 ## Development
 
-### Commands
+See [CLAUDE.md](CLAUDE.md) for detailed development workflow, code standards, and project guidance.
+
+### Quick Start
 
 ```bash
-# Run tests
-poetry run pytest
+# Lint markdown files
+npx markdownlint-cli docs/*.md
 
-# Type checking
-poetry run mypy src/
+# Deploy to CircuitPython device
+rsync -av --exclude='*.pyc' src/pool_node/ /Volumes/CIRCUITPY/
 
-# Linting and formatting
-poetry run ruff check src/ tests/
-poetry run ruff format src/ tests/
+# Monitor serial output
+screen /dev/tty.usbmodem* 115200
 ```
 
-### TDD Workflow
+## Implementation Phases
 
-This project follows Test-Driven Development:
-
-1. **Red** - Write a failing test
-2. **Green** - Write minimal code to pass
-3. **Refactor** - Clean up while tests stay green
-
-## Project Structure
-
-```text
-├── docs/               # Documentation
-└── src/[project_name]/
-    ├── core/           # Core domain logic
-    ├── api/            # API layer
-    ├── services/       # Business logic services
-    ├── models/         # Data models
-    └── utils/          # Utilities
-```
+1. **Foundation** - Shared libraries, JSON messages, cloud abstraction
+2. **Device Framework** - Pool Node, Valve Node, Display Node
+3. **Simulators & Testing** - Node simulators, integration tests
+4. **Deployment** - Nonprod and production environments
+5. **Smart Home** - Homebridge plugin for Apple HomeKit
+6. **Reliability & Polish** - Enhanced error handling, observability
 
 ## License
 
