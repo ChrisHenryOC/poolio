@@ -151,6 +151,17 @@ npm run build
 npm link  # For local testing
 ```
 
+### Git Workflow
+
+All changes must go through a branch and pull request before merging to main:
+
+1. Create a feature branch for your changes
+2. Commit changes to the branch
+3. Push the branch and create a pull request
+4. Merge the PR (use `/merge-pr <number>` command)
+
+Never push directly to the `main` branch.
+
 ## Key Design Decisions
 
 ### Reliability (Pool Node)
