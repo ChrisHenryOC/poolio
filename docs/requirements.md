@@ -67,7 +67,7 @@ The Poolio system is a distributed IoT pool automation and monitoring platform c
 
 - **SHALL** transmit sensor data to cloud platform via HTTPS POST
 - **SHALL** send `pool_status` JSON message as primary format (see FR-MSG-004)
-- **SHALL** support legacy pipe-delimited format during transition period (see Section 5.4)
+- **SHOULD** support legacy pipe-delimited format during transition period (see Section 5.4) - *Deferred to Phase 4+*
 - **SHALL** send individual temperature and battery feeds
 - **SHALL** support configurable transmission interval (default: 120 seconds)
 
@@ -146,7 +146,7 @@ The Poolio system is a distributed IoT pool automation and monitoring platform c
 - **SHALL** accept manual valve start command via MQTT using JSON `command` message (see FR-MSG-008)
 - **SHALL** accept valve start time configuration via MQTT feed
 - **SHALL** accept remote reset command via MQTT using JSON `command` message
-- **SHALL** support legacy message types 6 and 99 during transition period (see Section 5.4)
+- **SHOULD** support legacy message types 6 and 99 during transition period (see Section 5.4) - *Deferred to Phase 4+*
 
 #### FR-VN-007: Status Reporting
 
@@ -279,7 +279,7 @@ The Poolio system is a distributed IoT pool automation and monitoring platform c
 #### FR-SH-003: Message Protocol
 
 - **SHALL** use JSON message format as primary protocol (see Section 7.2, FR-MSG-001 through FR-MSG-016)
-- **SHALL** support legacy pipe-delimited format during transition period (see Section 5.4 for format specification)
+- **SHOULD** support legacy pipe-delimited format during transition period (see Section 5.4 for format specification) - *Deferred to Phase 4+*
 
 #### FR-SH-004: Temperature Units
 
@@ -387,18 +387,20 @@ The Poolio system is a distributed IoT pool automation and monitoring platform c
 
 *Future Consideration: Command authentication (signing/verification) is deferred to Phase 3 per NFR-SEC-003. Phase 1-2 relies on Adafruit IO's API key requirement for broker access.*
 
-#### NFR-SEC-002a: Command Rate Limiting
+#### NFR-SEC-002a: Command Rate Limiting (Deferred)
 
 *Note: Rate limiting is enforced by the receiving device since the cloud broker (Adafruit IO) cannot filter incoming messages.*
 
-- **SHALL** enforce minimum interval between command executions on receiving device:
+*Implementation Note: Rate limiting is **DEFERRED** to Phase 4+ per Kent Beck's "no just-in-case code" principle. The system uses authenticated MQTT (Adafruit IO API key required for broker access). Implement only if abuse is detected in production.*
+
+- **SHOULD** enforce minimum interval between command executions on receiving device (if implemented):
   - `valve_start`: Minimum 60 seconds between executions
   - `valve_stop`: Minimum 10 seconds between executions
   - `set_config`: Minimum 30 seconds between executions
   - `device_reset`: Minimum 300 seconds between executions
-- **SHALL** enforce general message ingestion rate limit of 10 messages per second
-- **SHALL** ignore commands that exceed rate limits
-- **SHALL** log rate-limited command attempts
+- **SHOULD** enforce general message ingestion rate limit of 10 messages per second (if abuse detected)
+- **SHALL** ignore commands that exceed rate limits (if rate limiting is implemented)
+- **SHALL** log rate-limited command attempts (if rate limiting is implemented)
 
 #### NFR-SEC-002b: Device Identity Validation
 
@@ -1234,10 +1236,12 @@ Message validation is critical for system reliability and security.
 - **SHOULD** ignore unknown fields in payload (forward compatibility)
 - **SHALL** log warning when unknown fields encountered
 
-#### FR-MSG-015: Backward Compatibility
+#### FR-MSG-015: Backward Compatibility (Deferred)
 
-- **SHALL** support legacy pipe-delimited format during transition period
-- **SHALL** detect message format by first character ('{' = JSON, digit = legacy)
+*Implementation Note: Legacy message support is **DEFERRED** to Phase 4+ per Kent Beck's "no just-in-case code" principle. The rearchitecture is a clean break - legacy nodes can continue using the existing system until migrated. Implement only if parallel operation with legacy nodes proves necessary.*
+
+- **SHOULD** support legacy pipe-delimited format during transition period (if migration requires coexistence)
+- **SHALL** detect message format by first character ('{' = JSON, digit = legacy) (if legacy support implemented)
 - **MAY** remove legacy support in future version
 
 #### FR-MSG-016: Message Version Handling

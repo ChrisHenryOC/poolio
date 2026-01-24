@@ -147,7 +147,7 @@ This architecture evolved through several iterations:
 
 **JSON Schema Version:** Draft 2020-12 (as specified in Requirements Appendix A)
 
-*Note: Full jsonschema validation runs in simulators/tests (CPython). On-device validation is simplified for CircuitPython compatibility.*
+*Note: Full jsonschema validation is **DEFERRED** to Phase 4+ per Kent Beck's "fewest elements" principle. Start with simplified required-field validation on-device. JSON Schema files and strict mode (`validate_message(json_str, strict=True)`) will be added only if simple validation proves insufficient for debugging message format issues.*
 
 ```
 src/shared/messages/
@@ -729,7 +729,9 @@ class SafetyInterlocks:
         ...
 ```
 
-**Command Rate Limiting:**
+**Command Rate Limiting (DEFERRED to Phase 4+):**
+
+*Implementation Note: Rate limiting is deferred per Kent Beck's "no just-in-case code" principle. The system uses authenticated MQTT (Adafruit IO API key required). Implement only if abuse is detected in production.*
 
 | Command | Minimum Interval |
 |---------|------------------|
@@ -738,9 +740,11 @@ class SafetyInterlocks:
 | `set_config` | 30 seconds |
 | `device_reset` | 300 seconds |
 
-**Legacy Message Support (FR-VN-006):**
+**Legacy Message Support (FR-VN-006) (DEFERRED to Phase 4+):**
 
-During migration, the Valve Node accepts both JSON and legacy pipe-delimited commands:
+*Implementation Note: Legacy support is deferred per Kent Beck's "no just-in-case code" principle. The rearchitecture is a clean break - legacy nodes can continue using the existing system until migrated. Implement only if parallel operation with legacy nodes proves necessary.*
+
+During migration (if needed), the Valve Node accepts both JSON and legacy pipe-delimited commands:
 
 | Legacy Type | JSON Equivalent | Description |
 |-------------|-----------------|-------------|
@@ -1262,23 +1266,26 @@ class CloudBackend:
 
 ### Pattern: Simplified Schema Validation
 
-The `jsonschema` library is too large for CircuitPython. Use simplified validation on-device:
+The `jsonschema` library is too large for CircuitPython. Use simplified validation on-device.
+
+*Implementation Note: Start with simplified validation only. Full jsonschema validation and JSON Schema files are DEFERRED to Phase 4+ per Kent Beck's "fewest elements" principle - implement only if simple validation proves insufficient.*
 
 ```python
-# Full validation (tests/simulators only - CPython)
-import jsonschema
-def validate_message(json_str, schema):
-    jsonschema.validate(json.loads(json_str), schema)
-
-# Simplified validation (CircuitPython on-device)
-def validate_message(json_str, strict=False):
-    """Check required fields only. Full schema validation in tests."""
+# MVP: Simplified validation only (CircuitPython and initial tests)
+def validate_message(json_str):
+    """Check required fields only."""
     try:
         data = json.loads(json_str)
         required = ["version", "type", "deviceId", "timestamp"]
         return all(k in data for k in required)
     except (ValueError, KeyError):
         return False
+
+# DEFERRED (Phase 4+): Full validation with JSON Schema files
+# Add only if simple validation proves insufficient for debugging
+# import jsonschema
+# def validate_message_strict(json_str, schema):
+#     jsonschema.validate(json.loads(json_str), schema)
 ```
 
 ### Pattern: adafruit_datetime for Time Handling
@@ -1299,10 +1306,10 @@ Some modules have two implementations for different environments:
 
 | Environment | Runtime | Validation | Features |
 |-------------|---------|------------|----------|
-| **On-device** (CircuitPython) | Microcontroller | Simplified | Core functionality |
-| **Simulators/Tests** (CPython) | Desktop Python | Full jsonschema | Complete validation, mocking |
+| **On-device** (CircuitPython) | Microcontroller | Simplified (required fields) | Core functionality |
+| **Simulators/Tests** (CPython) | Desktop Python | Simplified initially; full jsonschema if needed (Phase 4+) | Core functionality, mocking |
 
-This allows comprehensive testing on desktop while keeping device code lean.
+This allows comprehensive testing on desktop while keeping device code lean. Full JSON Schema validation is DEFERRED to Phase 4+ - implement only if simple validation proves insufficient.
 
 ### Type Hints
 
@@ -1437,7 +1444,7 @@ All nodes validate incoming messages before processing.
 - Increment error counter
 - Do NOT crash or hang
 - Publish validation errors to `events` feed for remote diagnostics
-- Implement rate limiting if excessive invalid messages detected (>10/minute)
+- Implement rate limiting if excessive invalid messages detected (>10/minute) - (DEFERRED to Phase 4+)
 
 ### Message Version Handling
 
@@ -2229,7 +2236,7 @@ The following scenarios **SHALL** be tested during integration testing:
 | Network disconnect during command | Network drops after command sent but before acknowledgment | Display Node shows timeout, Valve Node executes command on reconnect |
 | Watchdog reset recovery | Pool Node watchdog reset during measurement cycle | Device restarts, resumes normal operation on next cycle |
 | Sensor failure mid-operation | Temperature sensor fails after successful reads | Status message sent with null temperature, error logged |
-| Rate limit exceeded | Commands sent faster than rate limit allows | Excess commands ignored, rate limit violation logged |
+| Rate limit exceeded | Commands sent faster than rate limit allows | Excess commands ignored, rate limit violation logged (DEFERRED to Phase 4+) |
 | Clock drift scenario | Device clock drifts >30 seconds from server time | Re-sync corrects time, scheduling remains accurate |
 
 *Note: These scenarios test edge cases and failure modes that are difficult to encounter during normal operation but critical for system reliability.*
@@ -2447,7 +2454,7 @@ The build sequence aligns with the migration phases defined in requirements.md S
 - [ ] Implement scheduler (fill window logic)
 - [ ] Implement safety interlocks
 - [ ] Implement valve controller
-- [ ] Implement command rate limiting
+- [ ] ~~Implement command rate limiting~~ (DEFERRED to Phase 4+)
 - [ ] Deploy to hardware
 - [ ] Verify all safety interlocks
 - [ ] Run integration test with Pool Node
@@ -2541,7 +2548,7 @@ The build sequence aligns with the migration phases defined in requirements.md S
 **Valve Node:**
 
 - Validate all incoming messages (schema + freshness)
-- Rate limit commands per the table in Components section
+- Rate limit commands per the table in Components section (DEFERRED to Phase 4+ - implement only if abuse detected)
 - Publish command_response for all commands (success or failure)
 - Continue active fill to max duration if pool node data becomes stale
 - Log warning when continuing fill without fresh pool data
@@ -2566,7 +2573,7 @@ The build sequence aligns with the migration phases defined in requirements.md S
 - State machine: `idle` → `filling` → `cooldown`
 - On reset, valve closes automatically (GPIO goes low), state resets to `idle`
 - Track last pool_status timestamp for freshness checking
-- Maintain command timestamps for rate limiting
+- Maintain command timestamps for rate limiting (DEFERRED to Phase 4+)
 
 **Display Node:**
 
@@ -2592,7 +2599,7 @@ The build sequence aligns with the migration phases defined in requirements.md S
 - Use separate API keys per environment
 - TLS/SSL for all communications (HTTPS, MQTT port 8883)
 - Validate message timestamps (<5 min for commands, <15 min for status)
-- Rate limit commands on receiving device
+- Rate limit commands on receiving device (DEFERRED to Phase 4+ - implement only if abuse detected)
 - Consider disabling USB mass storage in production (CircuitPython)
 - Maintain list of trusted device IDs; ignore messages from unknown sources
 
