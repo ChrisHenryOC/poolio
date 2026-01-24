@@ -2,6 +2,25 @@
 
 Reverse-engineered from the original PoolIO-ValveNode, Poolio-PoolNode, and Poolio-DisplayNode projects.
 
+## How to Use This Document
+
+| Section | Purpose | Read When... |
+|---------|---------|--------------|
+| 2. Functional Requirements | What each node must do | Implementing node behavior |
+| 3. Non-Functional Requirements | Reliability, security, performance | Implementing error handling, timeouts |
+| 4. Hardware Requirements | MCU and sensor specifications | Setting up physical hardware |
+| 5. Communication Protocol | MQTT feeds, REST endpoints, rate limits | Setting up cloud communication |
+| 6. Configuration Requirements | Settings files and parameters | Configuring nodes |
+| 7.1 Pool Node Reliability | Timeouts, bus recovery, watchdog | Implementing Pool Node |
+| 7.2 JSON Message Format | Message schemas and payloads | Parsing or creating messages |
+| 7.3 Device Extensibility | Adding new device types | Adding pump or other devices |
+| 7.4 HomeKit Integration | Apple Home app support | Implementing Homebridge plugin |
+| 7.5 Environment Configuration | Prod/nonprod setup | Configuring deployment |
+| 7.6-7.7 Architecture & Simulators | Shared libraries, testing tools | Setting up development environment |
+| Appendix A | JSON Schema definitions | Validating messages |
+
+---
+
 ## 1. System Overview
 
 The Poolio system is a distributed IoT pool automation and monitoring platform consisting of three node types that communicate via a cloud-based message broker (Adafruit IO).
