@@ -13,40 +13,53 @@ Create GitHub issues from: $ARGUMENTS
 
 1. **Validate the provided file**
    - Check if file exists
-   - Look for `### Issue X.Y:` headers to confirm it's an implementation plan (e.g., `### Issue 1.1:`)
+   - Look for `### Issue X.Y:` or `### Issue X.Ya:` headers to confirm it's an implementation plan (e.g., `### Issue 1.1:`, `### Issue 2.23a:`)
    - If no issues found, search for `**/implementation-plan.md` or `**/impl*.md` in the same directory tree
    - If still not found, ask user to provide the correct file path
 
 2. **Parse the implementation plan**
-   - Extract all issues from sections matching `### Issue X.Y:` (e.g., `### Issue 1.1:`, `### Issue 2.3:`)
-   - Identify phases, types, and dependencies
-   - Note the original plan issue IDs in X.Y format
+   - Extract all issues from sections matching `### Issue X.Y:` or `### Issue X.Ya:` (supports letter suffixes like `2.23a`, `2.33a`)
+   - **SKIP** issues matching any of these patterns:
+     - `~~` strikethrough in the title (deferred placeholders)
+     - `(DEFERRED` in the header line
+     - `**Status**: **DEFERRED**` on a separate line within the issue
+   - Identify phases (including sub-phases like 2a, 2b, 2c), types, and dependencies
+   - Note the original plan issue IDs in X.Y or X.Ya format
+   - **Plan ID gaps are expected** - deferred issues create gaps (e.g., 2.15 → 2.18 when 2.16-2.17 are deferred)
 
 3. **Ensure required labels exist**
-   Create labels in parallel (multiple Bash calls in a single message):
+
+   First, extract all unique phases and types from the parsed issues. Then create labels in parallel:
 
    ```bash
-   # Phase labels - create in parallel
+   # Phase labels - create one for each unique phase found in the plan
+   # Extract phase from "- **Phase**: X - Name" lines, create label like "phase:X"
    gh label create "phase:1" --description "Phase 1 - Foundation" --color "0052CC" --force
-   gh label create "phase:2" --description "Phase 2 - Core" --color "1D76DB" --force
-   # ... create for each phase found in the plan
+   gh label create "phase:2a" --description "Phase 2a - Pool Node" --color "1D76DB" --force
+   # ... create for each unique phase found
 
-   # Type labels - create in parallel
+   # Type labels - create one for each unique type found in the plan
+   # Extract type from "- **Type**: TypeName" lines, lowercase it for label
    gh label create "type:setup" --description "Project setup" --color "D4C5F9" --force
-   gh label create "type:model" --description "Data models" --color "C5DEF5" --force
    gh label create "type:core" --description "Core logic" --color "BFD4F2" --force
-   gh label create "type:service" --description "Service layer" --color "D4E5F7" --force
-   gh label create "type:api" --description "API/interface" --color "E6F0FA" --force
-   gh label create "type:integration" --description "Integration" --color "C2E0C6" --force
-   gh label create "type:test" --description "Testing" --color "FBCA04" --force
-   gh label create "type:docs" --description "Documentation" --color "0075CA" --force
+   gh label create "type:spike" --description "Exploratory spike" --color "FFDFBA" --force
+   # ... create for each unique type found
    ```
 
-4. **Show pre-flight summary and confirm**
+   **Dynamic label creation**: Parse all `**Phase**:` and `**Type**:` fields from non-skipped issues, extract unique values, and create corresponding labels. Use consistent colors per category (blues for phases, purples/yellows for types). Only create labels for phases/types that have at least one issue being created.
+
+4. **Validate against Summary table (if present)**
+   - Look for a `## Summary` section with issue counts
+   - Compare parsed issue count against stated totals (e.g., "Total Issues (MVP): 67")
+   - Report any discrepancy as a warning
+
+5. **Show pre-flight summary and confirm**
    Before creating issues, display:
-   - Number of issues to create
-   - Phase breakdown (e.g., "Phase 1: 7 issues, Phase 2: 9 issues")
+   - Number of issues to create (and expected count if Summary table exists)
+   - Phase breakdown (e.g., "Phase 1: 11 issues, Phase 2a: 11 issues")
+   - Number of deferred issues skipped
    - Total dependencies count
+   - Any validation warnings
 
    Ask user: "Proceed with creating X issues?"
 
@@ -67,6 +80,17 @@ Create GitHub issues from: $ARGUMENTS
 - Are there any issues referencing non-existent dependencies?
 - Are there duplicate issue numbers in the plan?
 - Do all issues have valid types that map to labels?
+- Does the parsed count match any stated totals in a Summary section?
+- Are there circular dependencies? (A depends on B, B depends on A)
+- What are the root issues (no dependencies) and leaf issues (nothing depends on them)?
+
+### Dependency Graph Analysis
+
+Build a dependency graph and identify:
+- **Root issues**: No dependencies (can start immediately)
+- **Leaf issues**: Nothing depends on them (end of chains)
+- **Circular dependencies**: A→B→C→A patterns (must be resolved)
+- **Maximum chain depth**: Longest dependency path
 
 ### When to Branch Thinking
 
@@ -98,19 +122,27 @@ Build a data structure:
 ```text
 issues = [
   {
-    plan_id: "1.1",
+    plan_id: "1.1",       # supports X.Y or X.Ya format (e.g., "2.23a")
     title: "...",
-    phase: 1,
-    type: "setup",
+    phase: "1",           # string, may include letters (e.g., "2a", "2b", "4+")
+    type: "setup",        # lowercase for label matching
     description: "...",
     acceptance_criteria: [...],
     files: "...",
-    dependencies: ["1.3", "1.5"],  # plan IDs in X.Y format
+    dependencies: ["1.3", "1.5"],  # plan IDs only - filter out prose
     tests: "..."
   },
   ...
 ]
 ```
+
+**Dependency parsing**: The Dependencies field may contain various formats:
+- Simple list: `1.4, 1.5, 1.6`
+- With prose: `1.4, production experience showing need`
+- Expanded ranges: `2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9`
+- Prose references: `All issues 2.24 through 2.33a`
+
+Extract only valid issue ID patterns (X.Y or X.Ya format) and ignore non-matching text. For prose references like "All issues X through Y", expand to the individual IDs if possible, or log a warning and skip.
 
 ## 4. CREATE ISSUES (Two-Pass Approach)
 
@@ -147,7 +179,7 @@ _Dependencies will be added after all issues are created._
 [Test requirements]
 
 ---
-*Generated from implementation plan*
+*Generated from implementation plan issue X.Y*
 EOF
 )" \
   --label "phase:N" \
@@ -226,21 +258,33 @@ EOF
    ```text
    ## Issue Creation Summary
 
-   Total issues created: 35
+   Total issues created: 67
+   Deferred issues skipped: 4
 
+   ### By Phase
    | Phase | Issues Created |
    |-------|----------------|
-   | 1 - Foundation | #42-#48 (7 issues) |
-   | 2 - Core | #49-#57 (9 issues) |
+   | 1 - Foundation | #1-#11 (11 issues) |
+   | 2a - Pool Node | #12-#22 (11 issues) |
+   | 2b - Valve Node | #23-#28 (6 issues) |
+   | ... |
+
+   ### By Type
+   | Type | Count |
+   |------|-------|
+   | setup | 7 |
+   | core | 31 |
+   | integration | 15 |
+   | test | 11 |
    | ... |
 
    ## Number Mapping
 
    | Plan ID | GitHub Issue # | Title |
    |---------|----------------|-------|
-   | 1.1 | #42 | Initialize Project Structure |
-   | 1.2 | #43 | Create Configuration Schema |
-   | 2.1 | #45 | Core Models |
+   | 1.1 | #1 | Project Setup and Structure |
+   | 1.2 | #2 | Message Type Classes |
+   | 2.1 | #12 | Pool Node Project Setup |
    | ... |
    ```
 
