@@ -677,16 +677,19 @@ All nodes require sensitive configuration (WiFi credentials, API keys) that must
 **Plaintext Storage Risk:** Credentials in `settings.toml` and `secrets.h` are stored in plaintext. Physical access to any device allows credential extraction.
 
 **CircuitPython USB Exposure:** CircuitPython devices mount as USB mass storage (CIRCUITPY drive) when connected via USB. Anyone with physical USB access can read `settings.toml` and extract credentials. Mitigations:
+
 - Deploy devices in physically secured enclosures
 - Use `boot.py` to disable USB mass storage in production (see CircuitPython documentation)
 - Consider disabling USB after provisioning where hardware supports it
 
 **C++ Recommendations:**
+
 - Use ESP32 NVS encrypted storage instead of compiled-in values
 - Implement a secure provisioning mode (e.g., BLE or AP mode for initial setup)
 - Consider ESP32 secure boot and flash encryption for production deployments
 
 **General Recommendations:**
+
 - Document and follow a secure device provisioning procedure
 - Rotate API keys periodically and after any suspected compromise
 - Monitor Adafruit IO for unexpected device activity
@@ -714,6 +717,7 @@ AIO_KEY_NONPROD = "aio_nonprod_api_key"
 TIMEZONE = "America/Los_Angeles"
 ENVIRONMENT = "nonprod"
 ```
+
 Access via `os.getenv("AIO_USERNAME")`
 
 #### C++ (Arduino/ESP-IDF): Options
@@ -903,6 +907,7 @@ The rearchitecture will migrate from pipe-delimited messages to JSON for improve
 
 - **SHALL** use JSON as the message payload format
 - **SHALL** include standard envelope fields in all messages:
+
   ```json
   {
     "version": 2,
@@ -929,6 +934,7 @@ The rearchitecture will migrate from pipe-delimited messages to JSON for improve
 *Note: All date/time values use ISO 8601 format in local time with timezone offset (e.g., "2026-01-20T14:30:00-08:00"). Local time is preferred for human readability; the offset preserves timezone context.*
 
 #### FR-MSG-003: Message Types
+
 The following message types **SHALL** be supported:
 
 | Type String      | Direction      | Purpose                                  | Payload Definition |
@@ -1393,11 +1399,13 @@ Example capability declaration:
 **Priority/Conflict Resolution (Phase 3+):**
 
 When multiple commands conflict (e.g., manual valve start while scheduled fill is pending):
+
 - **SHALL** process commands in timestamp order
 - **SHALL** reject conflicting commands with `VALVE_ALREADY_ACTIVE` error
 - **SHOULD** log rejected commands with reason
 
 *Testability Note: Inter-device communication is verified by:*
+
 1. *Sending a command message with `target` field and confirming correct device processes it*
 2. *Verifying command_response is published for all commands*
 3. *Simulating conflicting commands and verifying rejection behavior*

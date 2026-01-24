@@ -147,6 +147,7 @@ All functions need type annotations.
 
 1. Push: `git push -u origin {branch}`
 2. Create PR:
+
    ```bash
    gh pr create --title "{feat|fix}: Description" --body "Closes #{github_issue_number}"
    ```
