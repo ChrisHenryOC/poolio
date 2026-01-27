@@ -17,14 +17,14 @@ Directory name: PR number + lowercase title with non-alphanumeric replaced by hy
 
 ## Step 2: Launch Agents
 
-Launch in parallel:
+Launch in parallel (all 6 agents in a single message with multiple Task tool calls):
 
 - code-quality-reviewer
 - performance-reviewer
 - test-coverage-reviewer
 - documentation-accuracy-reviewer
 - security-code-reviewer
-- **gemini-review** (optional) - Run `/gemini-review $ARGUMENTS` for independent review from Gemini LLM. Skip if Gemini is unavailable or GEMINI_API_KEY is not set. See `docs/gemini-setup.md` for setup.
+- gemini-review (optional - skip if GEMINI_API_KEY not set)
 
 Each agent reads `/tmp/pr$ARGUMENTS.diff` and saves findings to `code_reviews/PR$ARGUMENTS-<title>/{agent}.md`.
 
