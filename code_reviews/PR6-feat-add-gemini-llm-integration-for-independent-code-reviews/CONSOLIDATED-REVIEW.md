@@ -2,79 +2,83 @@
 
 ## Summary
 
-This PR adds Gemini LLM integration for independent code reviews, introducing two new slash commands (`gemini-eval`, `gemini-review`) and updating the `review-pr` workflow to optionally include Gemini as a second opinion. The implementation is well-structured and follows existing patterns. The main concern is a heredoc injection risk that requires a simple delimiter change, plus documentation gaps around Gemini CLI setup.
+This PR adds Gemini LLM integration for independent code reviews, introducing an agent (`gemini-reviewer.md`), a slash command (`gemini-review.md`), setup documentation (`docs/gemini-setup.md`), and updates to the `review-pr.md` workflow. The core implementation is solid - it uses secure piped input (avoiding heredoc injection risks), follows existing patterns, and includes comprehensive documentation. The main issues are documentation inaccuracies: references to a non-existent `gemini-eval` command and potentially incorrect Gemini CLI installation instructions.
 
 ## Sequential Thinking Summary
 
-- **Key patterns identified**: Heredoc safety concerns were raised by both security and test coverage reviewers, pointing to the same root cause. Error handling inconsistencies were flagged by both code quality and documentation reviewers.
-- **Conflicts resolved**: Gemini gave a clean bill of health while Claude agents found multiple issues. Gemini's review was surface-level positive; Claude agents provided deeper security and documentation analysis. The heredoc injection risk is real and should be addressed.
-- **Gemini unique findings**: Suggested notifying user when fallback save path is used - a valid UX improvement that Claude agents overlooked.
-- **Prioritization rationale**: Security issues take priority, followed by documentation gaps that affect usability. Code consistency improvements are recommended but not blocking.
+- **Key patterns identified**: Multiple reviewers (Code Quality, Test Coverage) flagged heredoc injection as High severity, but the Security reviewer and Gemini correctly noted the current implementation uses piped input (`cat file | gemini -p`), which is safe. This was a false positive from reviewing stale consolidated review files included in the PR.
+- **Conflicts resolved**: Claude agents found documentation accuracy issues that Gemini missed. Gemini provided positive validation of the security approach and praised the fallback-to-tmp design. The heredoc concern was a non-issue in the current code.
+- **Gemini unique findings**: Praised the `/tmp` fallback with user notification as "excellent defensive design" - a detail Claude agents didn't call out as positive.
+- **Prioritization rationale**: Documentation issues take priority because incorrect installation instructions will prevent users from using the feature. Security is not a concern since the implementation correctly uses piped input.
 
 ## Beck's Four Rules Check
 
 - [x] Passes the tests - N/A (configuration files, not executable code)
 - [x] Reveals intention - Commands are self-documenting with clear step-by-step instructions
-- [x] No duplication - Minor duplication (output format in Gemini prompt) is justified by technical necessity
-- [x] Fewest elements - Simple integration with no over-engineering
+- [x] No duplication - Prompt duplication is intentional and necessary for self-contained external LLM prompts
+- [x] Fewest elements - Simple integration with no over-engineering; minimal tool permissions
 
 ## Issue Matrix
 
 | # | Severity | Issue | File:Line | Reviewer(s) | In PR Scope? | Actionable? |
 |---|----------|-------|-----------|-------------|--------------|-------------|
-| 1 | High | Heredoc delimiter `EOF` allows potential command injection if diff contains `EOF` line | `.claude/commands/gemini-review.md:83` | Security, Test Coverage | Yes | Yes |
-| 2 | High | Missing Gemini CLI setup documentation (install, API key, config) | `.claude/commands/gemini-eval.md:36` | Documentation | Yes | Yes |
-| 3 | Medium | Tool permission `Bash(gemini*)` could match unintended binaries | `.claude/commands/gemini-review.md:3` | Security | Yes | Yes |
-| 4 | Medium | Inconsistent error handling (gemini-review has timeout/empty, gemini-eval only has auth) | `.claude/commands/gemini-eval.md:52-56` | Code Quality, Documentation | Yes | Yes |
-| 5 | Medium | Placeholder `[INSERT DIFF CONTENT]` unclear vs variable pattern | `.claude/commands/gemini-review.md:100` | Documentation | Yes | Yes |
-| 6 | Medium | Sequential Step 2b may add latency vs parallel execution | `.claude/commands/review-pr.md:30` | Performance | Yes | Maybe (design choice) |
-| 7 | Low | Missing "See Also" cross-references between commands | `.claude/commands/gemini-eval.md` | Documentation | Yes | Yes |
-| 8 | Low | Should notify user when fallback path `/tmp/` is used | `.claude/commands/gemini-review.md:133` | Gemini | Yes | Yes |
+| 1 | High | References non-existent `gemini-eval` command | `docs/gemini-setup.md:3` | Documentation | Yes | Yes |
+| 2 | High | Gemini CLI install instructions may be inaccurate | `docs/gemini-setup.md:8-17` | Documentation | Yes | Yes |
+| 3 | Medium | Inconsistent output filename (gemini-reviewer.md vs gemini-review.md) | Agent:26 vs Command:70 | Documentation | Yes | Yes |
+| 4 | Medium | Skip-if-unavailable logic not actionable by parent command | `.claude/commands/review-pr.md:27` | Documentation | Yes | Yes |
+| 5 | Medium | Inconsistent error handling between agent and command | Agent:82-86 vs Command:169-175 | Code Quality, Test Coverage | Yes | Yes |
+| 6 | Low | Stale line number references in committed review files | `CONSOLIDATED-REVIEW.md` (existing) | Documentation | Yes | Maybe |
 
 ## Actionable Issues
 
 ### High Priority
 
-**#1 - Heredoc Injection Risk**
-- **File**: `.claude/commands/gemini-review.md:83`, `.claude/commands/gemini-eval.md:36`
-- **Problem**: Using `<<'EOF'` as heredoc delimiter. A malicious PR diff containing `EOF` on its own line could terminate the heredoc early and execute subsequent content as shell commands.
-- **Fix**: Change delimiter to a unique string, e.g., `<<'GEMINI_REVIEW_END_7a3b9c'`
+**#1 - Remove `gemini-eval` Reference**
+- **File**: `docs/gemini-setup.md:3`
+- **Problem**: Documentation references `/gemini-eval` command which does not exist in this PR
+- **Fix**: Change to only reference `/gemini-review`, or clarify if `gemini-eval` is planned for future
 
-**#2 - Missing Setup Documentation**
-- **File**: `.claude/commands/gemini-eval.md` (or new `.claude/references/gemini-setup.md`)
-- **Problem**: Commands assume `gemini` CLI exists but don't explain how to install it or obtain API keys.
-- **Fix**: Add setup instructions or link to official Gemini CLI documentation.
+**#2 - Verify Gemini CLI Installation Instructions**
+- **File**: `docs/gemini-setup.md:8-17`
+- **Problem**: Package names (`@google/generative-ai-cli`, `brew install gemini`) may not be accurate
+- **Fix**: Verify against actual package registries or link to official Google documentation
 
 ### Medium Priority
 
-**#3 - Narrow Tool Permission**
-- **Files**: All three modified files
-- **Problem**: `Bash(gemini*)` glob could match other binaries with that prefix.
-- **Fix**: Change to `Bash(gemini)` for exact match.
+**#3 - Standardize Output Filename**
+- **Files**: `.claude/agents/gemini-reviewer.md:26` and `.claude/commands/gemini-review.md:70`
+- **Problem**: Agent saves to `gemini-reviewer.md`, command saves to `gemini-review.md`
+- **Fix**: Standardize on `gemini-reviewer.md` to match agent naming pattern
 
-**#4 - Align Error Handling**
-- **File**: `.claude/commands/gemini-eval.md:52-56`
-- **Problem**: Only handles auth errors; gemini-review handles auth, timeout, and empty response.
-- **Fix**: Add timeout and empty response handling to match gemini-review.md.
+**#4 - Clarify Skip Logic**
+- **File**: `.claude/commands/review-pr.md:27`
+- **Problem**: "skip if GEMINI_API_KEY not set" is not actionable by the parent command
+- **Fix**: Document that the agent itself handles unavailability gracefully (per `.claude/agents/gemini-reviewer.md:18-20`)
 
-**#5 - Improve Placeholder Pattern**
-- **File**: `.claude/commands/gemini-review.md:100`
-- **Problem**: `[INSERT DIFF CONTENT]` is less clear than variable substitution.
-- **Fix**: Use consistent templating pattern or add clarifying comment.
+**#5 - Align Error Handling**
+- **Files**: Agent and command files
+- **Problem**: Different error scenarios covered in each file
+- **Fix**: Ensure both files document the same error conditions (auth, timeout, empty response)
 
 ## Deferred Issues
 
 | # | Issue | Reason |
 |---|-------|--------|
-| 6 | Sequential workflow bottleneck | Design choice - Gemini is optional and may not be configured. Could document rationale. |
-| - | No test framework for commands | Pre-existing repo-level issue, not specific to this PR |
-| - | No consolidation test fixtures | Pre-existing process issue, not specific to this PR |
+| - | No test fixtures for consolidation | Pre-existing repo-level gap, not specific to this PR |
+| - | No smoke test script | Nice to have, not required for configuration files |
+| - | Stale heredoc references in committed reviews | Historical artifact; security issue was already fixed |
+
+## False Positives Identified
+
+**Heredoc Injection Vulnerability** - Flagged by Code Quality and Test Coverage reviewers as High severity, but the **current implementation uses piped input** (`cat file | gemini -p`), not heredocs. The Security reviewer and Gemini correctly identified this. The earlier reviewers appeared to reference the stale `CONSOLIDATED-REVIEW.md` from a previous review round that was committed as part of this PR.
 
 ## Reviewer Sources
 
-- `code-quality-reviewer.md` - 2 medium issues
-- `performance-reviewer.md` - 1 medium observation
-- `test-coverage-reviewer.md` - 2 high, 3 medium issues (many overlap with other reviewers)
-- `documentation-accuracy-reviewer.md` - 1 high, 3 medium issues
-- `security-code-reviewer.md` - 1 high, 2 medium issues
-- `gemini-review.md` - No issues, 1 unique suggestion
+| Reviewer | Critical | High | Medium | Observations |
+|----------|----------|------|--------|--------------|
+| code-quality-reviewer | 0 | 1 (false positive) | 3 | Good patterns noted |
+| performance-reviewer | 0 | 0 | 0 | No premature optimization |
+| test-coverage-reviewer | 0 | 2 (1 false positive) | 3 | TDD not applicable |
+| documentation-accuracy-reviewer | 0 | 2 | 3 | Key findings |
+| security-code-reviewer | 0 | 0 | 1 | Confirmed piped input is safe |
+| gemini-reviewer | 0 | 0 | 0 | Positive validation |

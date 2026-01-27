@@ -2,77 +2,111 @@
 
 ## Summary
 
-This PR adds Gemini LLM integration via three markdown command files (`gemini-eval.md`, `gemini-review.md`, and modifications to `review-pr.md`). These are declarative configuration files for Claude slash commands rather than executable code. While traditional unit tests are not applicable to markdown command definitions, there are notable gaps in validation, error scenario coverage, and the absence of any smoke testing strategy for these commands.
+This PR adds Gemini LLM integration for independent code reviews through markdown command definitions (`.claude/agents/gemini-reviewer.md`, `.claude/commands/gemini-review.md`) and documentation (`docs/gemini-setup.md`). Since these are declarative configuration files rather than executable code, traditional unit testing does not apply directly. However, the PR introduces untested behavior specifications and edge cases that warrant validation strategies, and the heredoc-based approach has an injection vulnerability that testing would have caught.
 
 ## Findings
 
 ### Critical
 
-None - The changes are configuration files without executable code paths that could cause data loss or security vulnerabilities.
+None
 
 ### High
 
-**Missing validation tests for command behavior** - `.claude/commands/gemini-review.md` - The command handles critical error scenarios (auth failure, timeout, empty response) but there is no way to verify these behaviors work correctly before deployment. Recommendation: Document expected behavior in a testable format or create a simple shell script that exercises the command with mock inputs.
+**Heredoc injection vulnerability untested** - `.claude/commands/gemini-review.md:33-73` and `.claude/agents/gemini-reviewer.md:33-73` - The command uses `<<'EOF'` heredoc to pass diff content to Gemini. If a PR diff contains the literal string `EOF` on its own line, it will prematurely terminate the heredoc, potentially executing subsequent diff content as shell commands. A simple test with a crafted diff containing `EOF` would immediately reveal this vulnerability.
 
-**No integration test for multi-model review consolidation** - `.claude/commands/review-pr.md:51-57` - The modified review process now must consolidate findings from Claude agents AND Gemini, but there is no test to verify the consolidation logic handles Gemini's potentially different output format. Recommendation: Create sample Gemini outputs to use as test fixtures when validating the CONSOLIDATED-REVIEW.md generation.
+```
+# Untested scenario that would fail:
+# Diff containing:
+#   EOF
+#   rm -rf /
+# Would escape the heredoc and execute malicious commands
+```
+
+**Recommendation**: Change to piped input pattern which is already shown in the agent file:
+```bash
+cat /tmp/pr{NUMBER}.diff | gemini -p "..."
+```
+This avoids heredoc termination issues entirely. Add a test fixture with `EOF` in the diff to verify.
+
+---
+
+**No integration test for Gemini output format handling** - `.claude/commands/review-pr.md:43-55` - The consolidation step must parse Gemini's output and reconcile it with Claude agent outputs. There are no test fixtures or validation that Gemini's actual output matches the expected format specified in the prompt. Different LLM models can interpret format instructions differently.
+
+**Recommendation**: Create test fixtures with sample Gemini outputs (both well-formed and edge cases like partial responses) to validate the consolidation logic handles real-world variance.
 
 ### Medium
 
-**Edge cases not documented or tested** - `.claude/commands/gemini-eval.md:19-21` - The command checks "if $ARGUMENTS is a file path or a free-form prompt" but the logic for distinguishing these is undefined. Edge cases include:
+**Graceful degradation path untested** - `.claude/commands/review-pr.md:33` states "skip if GEMINI_API_KEY not set" but there is no specification of what "skip" means:
+- Does the review continue without Gemini findings?
+- Is a placeholder written to the output directory?
+- Is the user notified?
 
-- Paths that look like prompts (e.g., `review this code`)
-- Non-existent file paths
-- Paths with spaces
-- Empty arguments
+**Recommendation**: Document expected behavior and consider adding a smoke test that runs the review workflow with GEMINI_API_KEY unset to verify graceful degradation.
 
-Recommendation: Document the expected behavior for each edge case and consider adding a help message when arguments are empty.
+---
 
-**No negative test cases for Gemini unavailability** - `.claude/commands/review-pr.md:36` - The command says "Skip if Gemini is unavailable or GEMINI_API_KEY is not set" but there is no verification that this skip behavior works correctly and does not interrupt the overall review process. Recommendation: Document how the review flow should degrade gracefully.
+**Edge cases for input detection undocumented** - `.claude/agents/gemini-reviewer.md:23-26` - The instruction to "Read `/tmp/pr{NUMBER}.diff`" assumes the file exists. Edge cases not covered:
+- File does not exist (previous step failed)
+- File is empty (PR has no diff)
+- File is extremely large (could hit API limits)
 
-**Heredoc string quoting not tested** - `.claude/commands/gemini-review.md:20-62` - The heredoc uses `<<'EOF'` with instruction to "Replace [INSERT DIFF CONTENT] with the actual diff content." If the diff contains EOF or special bash characters, this could break. Recommendation: Consider using a different delimiter or documenting handling for diffs with special characters.
+**Recommendation**: Add explicit handling instructions for these cases. For executable code, these would be test cases.
+
+---
+
+**Error scenario coverage inconsistent** - `.claude/agents/gemini-reviewer.md:82-86` lists three error types (auth, timeout, empty response) while `.claude/commands/gemini-review.md:169-175` handles four (adding "Tool not found"). This inconsistency suggests error handling was added ad-hoc rather than systematically designed.
+
+**Recommendation**: Align error handling between agent and command definitions. In TDD terms, define the error contract first, then implement consistently.
 
 ### Observations
 
-**TDD Assessment: Inconclusive to Negative**
+**TDD Assessment: Not Applicable / Negative Indicators**
 
-These command files were clearly not developed using TDD since:
+These are configuration files, so TDD does not directly apply. However, several anti-patterns suggest specification-after-implementation thinking:
 
-1. They are declarative configuration rather than code
-2. No test files exist in the repository for these commands
-3. The error handling scenarios read as "thought of after the fact" rather than behavior-first specifications
+| Indicator | Evidence |
+|-----------|----------|
+| Implementation before behavior spec | Error handling differs between files - suggests fixes added as problems arose |
+| Missing edge case coverage | No guidance for empty diff, missing file, rate limiting |
+| Happy path focus | Documentation describes success flow in detail but error handling is sparse |
+| No testable contract | Output format is specified but no way to verify Gemini conforms |
 
 **Kent Beck's Four Rules Analysis:**
 
 | Rule | Assessment |
 |------|------------|
-| Passes the tests | N/A - No tests exist for these commands |
-| Reveals intention | Yes - Command purposes are clear from descriptions |
-| No duplication | Mostly - Some duplication between gemini-eval and gemini-review prompt structure |
-| Fewest elements | Yes - Commands are minimal and focused |
+| Passes the tests | N/A - No tests exist; command behavior is untested |
+| Reveals intention | Partial - Commands are readable but error behavior is unclear |
+| No duplication | Concern - Prompt text duplicated between agent/command files |
+| Fewest elements | Good - Implementation is minimal |
 
-**Suggestions for Testing Strategy:**
+**Testing Strategy Recommendations:**
 
-1. **Manual testing checklist**: Create a checklist document for manual validation of each command before releases
-2. **Smoke test script**: A simple shell script that verifies `gemini` CLI is available and responds to basic prompts
-3. **Test fixtures**: Create sample PR diffs and expected Gemini outputs for testing consolidation logic
-4. **CI validation**: Add markdownlint check for the new command files to existing workflow
+1. **Smoke test script** (`scripts/test-gemini-commands.sh`):
+   - Verify `gemini` CLI is available
+   - Test with mock diff containing `EOF` (security)
+   - Test with missing API key (graceful degradation)
+   - Test with empty diff (edge case)
 
-**Property-Based Testing Opportunity:**
+2. **Test fixtures** (`tests/fixtures/gemini/`):
+   - `sample-gemini-output.md` - Expected format
+   - `malformed-gemini-output.md` - Missing sections
+   - `diff-with-eof.patch` - Security test case
 
-The input handling in `gemini-eval.md` (distinguishing file paths from prompts) could benefit from property-based testing if it were implemented in code. Properties to verify:
+3. **CI validation**:
+   - Lint markdown files (already in place per CLAUDE.md)
+   - Validate YAML frontmatter in command files
+   - Check for consistent allowed-tools patterns
 
-- All valid file paths are recognized as file paths
-- All strings not matching path patterns are treated as prompts
-- Command never crashes regardless of input
+**Missing Test Scenarios Table:**
 
-**Missing Test Scenarios:**
-
-| Scenario | Status |
-|----------|--------|
-| Gemini returns empty response | Documented but untested |
-| Gemini times out | Documented but untested |
-| GEMINI_API_KEY not set | Documented but untested |
-| PR diff contains EOF string | Not addressed |
-| Very large PR diff (>100KB) | Not addressed |
-| Network failure mid-request | Not addressed |
-| Gemini rate limiting | Not addressed |
+| Scenario | File | Status |
+|----------|------|--------|
+| Diff contains `EOF` string | `gemini-review.md:33-73` | Not handled (security risk) |
+| GEMINI_API_KEY not set | `review-pr.md:33` | Behavior unspecified |
+| Gemini returns empty response | `gemini-reviewer.md:86` | Documented, untested |
+| Gemini times out | `gemini-reviewer.md:85` | Documented, untested |
+| Diff file does not exist | `gemini-reviewer.md:24` | Not addressed |
+| Very large diff (>100KB) | N/A | Not addressed |
+| Gemini rate limited | `docs/gemini-setup.md:77-79` | Mentioned in docs only |
+| Output directory does not exist | `gemini-review.md:162-168` | Fallback documented |
