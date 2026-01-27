@@ -86,6 +86,12 @@ poolio_rearchitect/
 │   ├── commands/            # Slash command definitions
 │   ├── memories/            # Persistent context/patterns
 │   └── references/          # Reference documentation
+├── .github/
+│   └── workflows/           # GitHub Actions CI/CD pipelines
+│       ├── markdown.yml     # Documentation linting
+│       ├── circuitpython.yml # Python tests (Adafruit Blinka)
+│       ├── cpp.yml          # PlatformIO builds
+│       └── nodejs.yml       # Homebridge plugin tests
 ├── docs/
 │   ├── requirements.md      # Comprehensive requirements document
 │   └── architecture.md      # System architecture and implementation details
@@ -173,6 +179,19 @@ npx markdownlint-cli **/*.md  # All markdown files
 ```
 
 The project uses `.markdownlint.jsonc` for configuration. Fix any reported issues before committing. Files excluded via `.gitignore` do not need to be linted.
+
+### CI/CD (GitHub Actions)
+
+All code is validated automatically via GitHub Actions on push and PR:
+
+| Workflow | Trigger | What It Does |
+|----------|---------|--------------|
+| `markdown.yml` | `**/*.md` changes | Runs markdownlint |
+| `circuitpython.yml` | `src/**/*.py`, `tests/**/*.py` | Tests with [Adafruit Blinka](https://github.com/adafruit/Adafruit_Blinka) |
+| `cpp.yml` | `pool_node_cpp/**` | PlatformIO build + native tests |
+| `nodejs.yml` | `homebridge/**` | npm lint, test, build |
+
+Workflows only run when relevant files change. All PRs to `main` must pass CI checks.
 
 ## Key Design Decisions
 
@@ -306,6 +325,8 @@ def get_feed_name(logical_name, environment):
 - Unit tests for configuration validation
 - Integration tests require hardware (limited automation)
 - Mock cloud backend for offline testing
+- CI runs tests automatically on push/PR via GitHub Actions
+- CircuitPython code tested using [Adafruit Blinka](https://github.com/adafruit/Adafruit_Blinka) compatibility layer
 
 ## Sequential Thinking
 
