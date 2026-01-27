@@ -149,3 +149,13 @@ cython_debug/
 /docs/archive/
 /docs/todo-notes.txt
 /mockups-venv/
+
+# Secrets - NEVER commit these
+settings.toml
+secrets.h
+
+# uv
+.venv/
+
+# Scratchpads (implementation notes)
+scratchpads/
