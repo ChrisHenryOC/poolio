@@ -156,7 +156,6 @@ secrets.h
 
 # uv
 .venv/
-uv.lock
 
 # Scratchpads (implementation notes)
 scratchpads/
