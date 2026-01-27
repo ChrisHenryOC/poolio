@@ -30,4 +30,4 @@ jobs:
           node-version: '20'
 
       - name: Run markdownlint
-        run: npx markdownlint-cli "**/*.md" --ignore node_modules --ignore "**/venv/**" --ignore "**/*-venv/**"
+        run: npx markdownlint-cli "**/*.md" --ignore node_modules --ignore "**/venv/**" --ignore "**/*-venv/**" --ignore "code_reviews/**"

@@ -68,6 +68,17 @@ rsync -av --exclude='*.pyc' src/pool_node/ /Volumes/CIRCUITPY/
 screen /dev/tty.usbmodem* 115200
 ```
 
+### CI/CD
+
+GitHub Actions automatically validates all code on push and pull requests:
+
+| Workflow | Purpose |
+|----------|---------|
+| Markdown | Documentation linting |
+| CircuitPython | Python tests via [Adafruit Blinka](https://github.com/adafruit/Adafruit_Blinka) |
+| C++ | PlatformIO builds for ESP32 |
+| Node.js | Homebridge plugin tests |
+
 ## Implementation Phases
 
 1. **Foundation** - Shared libraries, JSON messages, cloud abstraction
