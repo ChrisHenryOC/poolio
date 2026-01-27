@@ -67,12 +67,12 @@ Remember: ONLY provide review text. Do not attempt any file operations."
 
 ## Step 3: Save Output
 
-Save Gemini's response to `code_reviews/PR$ARGUMENTS-<title>/gemini-review.md`.
+Save Gemini's response to `code_reviews/PR$ARGUMENTS-<title>/gemini-reviewer.md`.
 
 If the directory doesn't exist:
 
 1. Create it if possible, OR
-2. Save to `/tmp/gemini-review-$ARGUMENTS.md` and notify user: "Note: Review saved to /tmp/ because code_reviews directory not found."
+2. Save to `/tmp/gemini-reviewer-$ARGUMENTS.md` and notify user: "Note: Review saved to /tmp/ because code_reviews directory not found."
 
 ## Error Handling
 

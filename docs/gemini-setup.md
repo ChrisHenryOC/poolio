@@ -1,20 +1,12 @@
 # Gemini CLI Setup
 
-This document describes how to set up the Gemini CLI for use with the `/gemini-eval` and `/gemini-review` commands.
+This document describes how to set up the Gemini CLI for use with the `/gemini-review` command.
 
 ## Installation
 
-Install the Gemini CLI using npm:
+Install the Gemini CLI following the official instructions at [Google AI for Developers](https://ai.google.dev/gemini-api/docs/quickstart).
 
-```bash
-npm install -g @google/generative-ai-cli
-```
-
-Or using Homebrew:
-
-```bash
-brew install gemini
-```
+The CLI should provide a `gemini` command that accepts piped input with the `-p` flag.
 
 Verify installation:
 

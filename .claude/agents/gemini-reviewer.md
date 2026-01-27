@@ -75,6 +75,7 @@ Remember: ONLY provide review text. Do not attempt any file operations."
 
 ## Error Handling
 
-- **Auth error**: Note in output that GEMINI_API_KEY needs to be configured
+- **Auth error**: Note in output that GEMINI_API_KEY needs to be configured (see `docs/gemini-setup.md`)
 - **Timeout**: Save partial output if any, note the timeout
 - **Empty response**: Note that Gemini returned no output
+- **"Tool not found" in output**: Filter out - Gemini sometimes tries to use unavailable tools
