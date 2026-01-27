@@ -135,18 +135,18 @@ These font sizes match the original implementation in `Poolio-DisplayNode/displa
 
 | Element | Position | Font | Color | Alignment |
 |---------|----------|------|-------|-----------|
-| Date | Top center | Arial 10pt | Aqua | Center |
-| Time | Below date | Arial 22pt | Cornsilk | Center |
-| AM/PM | Right of time | Arial 10pt | Cornsilk | Left |
-| FILLING | Left of time | Arial 10pt | Blue | Left |
-| Temperature labels | Left column | Arial 20pt | Aqua | Left |
-| Temperature values | After labels | Arial 20pt | Yellow | Left |
-| Humidity | After inside temp | Arial 20pt | Yellow | Left |
-| Next Fill | Right side | Arial 8pt | Cornsilk | Right |
-| Needs Water | Right side | Arial 8pt | Cornsilk | Right |
-| Battery voltage | Right side | Arial 8pt | Cornsilk | Right |
+| Date | Top center | 10pt | Aqua | Center |
+| Time | Below date | 24pt | Cornsilk | Center |
+| AM/PM | Right of time | 10pt | Cornsilk | Left |
+| FILLING | Left of time | 10pt | Blue | Left |
+| Temperature labels | Left column | 18pt | Aqua | Left |
+| Temperature values | After labels | 18pt | Yellow | Left |
+| Humidity | After inside temp | 18pt | Yellow | Left |
+| Next Fill | Right side | 8pt | Cornsilk | Right |
+| Needs Water | Right side | 8pt | Cornsilk | Right |
+| Battery voltage | Right side | 8pt | Cornsilk | Right |
 | Sparkline | Bottom | - | Aqua | - |
-| Chart min/max | Right of chart | Arial 8pt | Cornsilk | Right |
+| Chart min/max | Right of chart | 8pt | Cornsilk | Right |
 
 ### Touch Zones (Main Dashboard)
 
@@ -173,7 +173,7 @@ Shows detailed pool sensor information with battery status. Message timing infor
 **Header:** Back button (←) and "Pool Node Status" title
 
 **Temperature Section:**
-- Large temperature display (22pt, yellow)
+- Large temperature display (24pt, yellow)
 - Previous reading and delta trend
 
 **Water Level Section:**
@@ -334,9 +334,10 @@ Uses a whisker chart showing daily min/max ranges for the past month.
 | Parameter | 24h | 7d | 30d |
 |-----------|-----|-----|-----|
 | Chart type | Sparkline | Whisker | Whisker |
-| Chart width | 180 pixels | 180 pixels | 180 pixels |
+| Chart width | 240 pixels | 240 pixels | 240 pixels |
 | Chart height | 120 pixels | 120 pixels | 120 pixels |
-| Data points | 240 | 7 (daily) | 30 (daily) |
+| Raw data points | 288 (5-min intervals) | 7 (daily) | 30 (daily) |
+| Rendering | Downsample 288 → 240 pixels | 1 bar per day | 1 bar per day |
 | Y-axis | Auto-scaled | Auto-scaled | Auto-scaled |
 
 ### Data Processing
@@ -497,34 +498,40 @@ After sending a command, display feedback:
 
 Font sizes match the original implementation:
 
-| Element | Font | Size | Style |
-|---------|------|------|-------|
-| Date | Arial | 10pt | Regular |
-| Time (main) | Arial | 22pt | Regular |
-| AM/PM | Arial | 10pt | Regular |
-| FILLING indicator | Arial | 10pt | Regular |
-| Temperature labels | Arial | 20pt | Regular |
-| Temperature values | Arial | 20pt | Regular |
-| Humidity | Arial | 20pt | Regular |
-| Timestamps (msgData) | Arial | 7pt | Regular |
-| Next Fill | Arial | 8pt | Regular |
-| Needs Water | Arial | 8pt | Regular |
-| Battery voltage | Arial | 8pt | Regular |
-| Chart min/max | Arial | 8pt | Regular |
-| Button labels | Arial | 10pt | Regular |
-| Detail page headers | Arial | 14pt | Regular |
-| Detail page values | Arial | 12pt | Regular |
+| Element | Size | Style |
+|---------|------|-------|
+| Date | 10pt | Regular |
+| Time (main) | 24pt | Regular |
+| AM/PM | 10pt | Regular |
+| FILLING indicator | 10pt | Regular |
+| Temperature labels | 18pt | Regular |
+| Temperature values | 18pt | Regular |
+| Humidity | 18pt | Regular |
+| Timestamps (msgData) | 8pt | Regular |
+| Next Fill | 8pt | Regular |
+| Needs Water | 8pt | Regular |
+| Battery voltage | 8pt | Regular |
+| Chart min/max | 8pt | Regular |
+| Button labels | 10pt | Regular |
+| Detail page headers | 14pt | Regular |
+| Detail page values | 12pt | Regular |
+
+**Font Source:** Adafruit [circuitpython-fonts](https://github.com/adafruit/circuitpython-fonts) bundle (Free Sans).
+
+**Available sizes:** 6, 8, 10, 12, 14, 18, 24, 30, 36, 42, 48, 54, 60, 72
 
 **Font Loading:**
 
 ```python
-font7 = bitmap_font.load_font("/lib/arial7.bdf")
-font8 = bitmap_font.load_font("/lib/arial8.bdf")
-font10 = bitmap_font.load_font("/lib/arial10.bdf")
-font12 = bitmap_font.load_font("/lib/arial12.bdf")
-font14 = bitmap_font.load_font("/lib/arial14.bdf")
-font20 = bitmap_font.load_font("/lib/arial20.bdf")
-font22 = bitmap_font.load_font("/lib/arial22.bdf")
+from adafruit_bitmap_font import bitmap_font
+
+# Using Free Sans from Adafruit circuitpython-fonts bundle
+font8 = bitmap_font.load_font("/fonts/font_free_sans_8.pcf")
+font10 = bitmap_font.load_font("/fonts/font_free_sans_10.pcf")
+font12 = bitmap_font.load_font("/fonts/font_free_sans_12.pcf")
+font14 = bitmap_font.load_font("/fonts/font_free_sans_14.pcf")
+font18 = bitmap_font.load_font("/fonts/font_free_sans_18.pcf")
+font24 = bitmap_font.load_font("/fonts/font_free_sans_24.pcf")
 ```
 
 **Fallback:** Use `terminalio.FONT` if custom fonts unavailable.
@@ -709,7 +716,7 @@ python docs/mockups/generate_mockups.py
 
 2. **Pump controls location** - Deferred to Phase 4 when pump hardware is defined. Will add new detail screen.
 
-3. **Font options for large temperature** - Use Arial 18pt for temperature values, 28pt for main time display.
+3. **Font sizes** - Using Adafruit circuitpython-fonts (Free Sans): 18pt for temperature values, 24pt for main time display.
 
 4. **Touch calibration data storage** - Store in `config.json` alongside other node configuration.
 
