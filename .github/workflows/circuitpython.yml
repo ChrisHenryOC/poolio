@@ -1,0 +1,66 @@
+# CircuitPython CI
+# Tests CircuitPython code using Adafruit Blinka compatibility layer
+#
+# Adafruit Blinka provides CircuitPython APIs on CPython, enabling
+# CI testing without hardware. See: https://github.com/adafruit/Adafruit_Blinka
+
+name: CircuitPython
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'src/**/*.py'
+      - 'tests/**/*.py'
+      - 'requirements*.txt'
+      - 'pyproject.toml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**/*.py'
+      - 'tests/**/*.py'
+      - 'requirements*.txt'
+      - 'pyproject.toml'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Blinka and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Adafruit Blinka - CircuitPython compatibility layer for CPython
+          pip install Adafruit-Blinka
+          # Project dependencies
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          # Testing tools
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        env:
+          # Tell Blinka we're in a generic Linux environment (no hardware)
+          BLINKA_U2IF: "1"
+        run: |
+          if [ -d "tests" ] && [ "$(find tests -name '*.py' 2>/dev/null | head -1)" ]; then
+            pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=xml
+          else
+            echo "No tests found yet - workflow ready for when tests are added"
+          fi
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: hashFiles('coverage.xml') != ''
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false

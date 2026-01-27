@@ -1,0 +1,47 @@
+# C++ CI (PlatformIO)
+# Builds and tests ESP32 C++ code for Pool Node
+
+name: C++
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'pool_node_cpp/**'
+      - 'platformio.ini'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'pool_node_cpp/**'
+      - 'platformio.ini'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Build firmware
+        run: pio run -d pool_node_cpp
+
+      - name: Run unit tests
+        run: |
+          # PlatformIO native test runner (runs on host, not device)
+          if pio test -d pool_node_cpp --list-tests 2>/dev/null | grep -q "test"; then
+            pio test -d pool_node_cpp -e native
+          else
+            echo "No native tests configured yet"
+          fi

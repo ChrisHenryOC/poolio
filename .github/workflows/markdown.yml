@@ -1,0 +1,33 @@
+# Markdown Linting
+# Validates documentation formatting
+
+name: Markdown
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '**/*.md'
+      - '.markdownlint.jsonc'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**/*.md'
+      - '.markdownlint.jsonc'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run markdownlint
+        run: npx markdownlint-cli "**/*.md" --ignore node_modules --ignore "**/venv/**" --ignore "**/*-venv/**"
