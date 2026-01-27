@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(mkdir:*),Bash(gh api:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr list:*),Bash(gemini*)
+allowed-tools: Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(mkdir:*),Bash(gh api:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr list:*),Bash(gemini)
 description: Review a pull request
 ---
 
@@ -24,16 +24,9 @@ Launch in parallel:
 - test-coverage-reviewer
 - documentation-accuracy-reviewer
 - security-code-reviewer
+- **gemini-review** (optional) - Run `/gemini-review $ARGUMENTS` for independent review from Gemini LLM. Skip if Gemini is unavailable or GEMINI_API_KEY is not set. See `docs/gemini-setup.md` for setup.
 
 Each agent reads `/tmp/pr$ARGUMENTS.diff` and saves findings to `code_reviews/PR$ARGUMENTS-<title>/{agent}.md`.
-
-## Step 2b: Gemini Independent Review (Optional)
-
-Run `/gemini-review $ARGUMENTS` to get an independent review from Gemini LLM.
-
-This provides a second opinion from a different model. Gemini's output is saved to `code_reviews/PR$ARGUMENTS-<title>/gemini-review.md`.
-
-Skip if Gemini is unavailable or GEMINI_API_KEY is not set.
 
 ## Step 3: Consolidate with Sequential Thinking
 
