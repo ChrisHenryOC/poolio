@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(mkdir:*),Bash(gh api:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr list:*)
+allowed-tools: Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(mkdir:*),Bash(gh api:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr list:*),Bash(gemini*)
 description: Review a pull request
 ---
 
@@ -27,6 +27,14 @@ Launch in parallel:
 
 Each agent reads `/tmp/pr$ARGUMENTS.diff` and saves findings to `code_reviews/PR$ARGUMENTS-<title>/{agent}.md`.
 
+## Step 2b: Gemini Independent Review (Optional)
+
+Run `/gemini-review $ARGUMENTS` to get an independent review from Gemini LLM.
+
+This provides a second opinion from a different model. Gemini's output is saved to `code_reviews/PR$ARGUMENTS-<title>/gemini-review.md`.
+
+Skip if Gemini is unavailable or GEMINI_API_KEY is not set.
+
 ## Step 3: Consolidate with Sequential Thinking
 
 After agents complete, **use `mcp__sequential-thinking__sequentialthinking`** to analyze and consolidate findings:
@@ -43,7 +51,8 @@ After agents complete, **use `mcp__sequential-thinking__sequentialthinking`** to
 
 ### Key Questions to Resolve
 
-- Are there conflicting recommendations between agents?
+- Are there conflicting recommendations between agents (including Gemini)?
+- Did Gemini catch anything the Claude agents missed (or vice versa)?
 - Which findings are symptoms vs. root causes?
 - What's the minimum set of changes needed?
 
@@ -68,6 +77,7 @@ Create `CONSOLIDATED-REVIEW.md`:
 
 - **Key patterns identified**: [What emerged from analyzing agent reports]
 - **Conflicts resolved**: [Any disagreements between agents and how resolved]
+- **Gemini unique findings**: [Issues Gemini caught that Claude agents missed, if any]
 - **Prioritization rationale**: [Why issues were ordered this way]
 
 ## Beck's Four Rules Check
