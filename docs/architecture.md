@@ -159,6 +159,15 @@ src/shared/messages/
 └── validator.py         # Schema validation (simplified on-device, full jsonschema in tests)
 ```
 
+**Field Naming Convention:**
+
+Python classes use `snake_case` for attributes (Pythonic convention). JSON messages use `camelCase` for keys (web API convention). The encoder and decoder handle conversion automatically:
+
+| Direction | Conversion | Example |
+|-----------|------------|---------|
+| Python → JSON | `snake_case` → `camelCase` | `is_filling` → `isFilling` |
+| JSON → Python | `camelCase` → `snake_case` | `currentFillDuration` → `current_fill_duration` |
+
 **Key Interfaces:**
 
 ```python
@@ -282,7 +291,6 @@ class AdafruitIOMQTT(CloudBackend):
 |--------------|-----------|-----------|
 | Status messages (pool-status, valve-status, display-status) | QoS 0 | Fire-and-forget; next status update will arrive soon |
 | Command messages (fill-start, fill-stop, manual controls) | QoS 1 | At-least-once delivery; critical for valve operations |
-| Heartbeat messages | QoS 0 | Informational; loss acceptable |
 | Config updates | QoS 1 | Ensure configuration changes are received |
 
 *See Requirements Section 5.1 for detailed MQTT usage specifications.*
@@ -296,6 +304,39 @@ class AdafruitIOMQTT(CloudBackend):
 | Display Node | At startup + every 12 hours | Correct for RTC drift; ensure timestamp display accuracy |
 
 *Note: ESP32 internal RTC can drift several seconds per day. Regular re-synchronization ensures scheduling accuracy for time-sensitive operations like fill windows.*
+
+**Historical Data Strategy (Display Node):**
+
+The Display Node fetches historical temperature data for sparkline and whisker chart displays. Adafruit IO's chart endpoint returns data at specified resolution intervals.
+
+| View | Time Range | Resolution | Data Points | Memory |
+|------|------------|------------|-------------|--------|
+| 24h sparkline | 24 hours | 5 min | 288 | ~3 KB |
+| 7d whisker | 7 days | 60 min | 168 | ~2 KB |
+| 30d whisker | 30 days | 60 min | 720 | ~8 KB |
+
+**Endpoint:**
+
+```text
+GET /api/v2/{username}/feeds/{feed}/data/chart?hours={hours}&resolution={minutes}
+```
+
+**Chart Endpoint Behavior:**
+
+- Resolution parameter aggregates data using average
+- Available resolutions: 1, 5, 10, 30, 60, 120, 240, 480, 960 minutes
+- Does NOT provide min/max per window - only average values
+
+**Whisker Chart Implementation:**
+
+Since pool temperature changes slowly, 60-minute resolution captures daily trends accurately:
+
+1. Fetch chart data at 60-minute resolution
+2. Group data points by day (24 points per day)
+3. Calculate min, max, avg for each day client-side
+4. Render whisker chart with daily aggregates
+
+*Note: IO+ tier (60 days retention) provides sufficient historical data for 30-day charts.*
 
 #### Config Module
 
@@ -399,6 +440,42 @@ NODE_DEFAULTS = {
 | **Restart-required** | `deviceId`, `environment`, `hardwareEnabled`, GPIO pins, I2C/SPI addresses, API keys, WiFi credentials, supported message versions | Require device restart |
 
 *Note: Hot-reload is supported for Valve Node and Display Node (continuously running). Pool Node applies configuration changes on next wake cycle.*
+
+**Configuration Distribution (Per-Device Config Feeds):**
+
+Each device has its own configuration feed that stores the complete configuration JSON:
+
+| Device | Config Feed |
+|--------|-------------|
+| Pool Node | `config-pool-node` |
+| Valve Node | `config-valve-node` |
+| Display Node | `config-display-node` |
+
+*Note: Config feeds should be configured in Adafruit IO to retain only the latest value (1 data point history). This ensures devices always fetch the current configuration.*
+
+**Boot Sequence:**
+
+1. Load defaults from local `config.json` (includes calibration, hardware mappings)
+2. Connect to WiFi
+3. Fetch latest config via HTTP GET: `/api/v2/{username}/feeds/{config-feed}/data/last`
+4. Merge fetched config over defaults (fetched values override local defaults)
+5. Connect to MQTT and subscribe to config feed for runtime updates
+6. Start normal operation
+
+*Note: Adafruit IO does not support MQTT retained messages. Use HTTP GET to fetch initial config, then MQTT subscribe for runtime updates. Alternatively, publish to `{feed}/get` topic after subscribing to trigger immediate delivery of last value.*
+
+**Configuration Updates:**
+
+1. Administrator publishes complete config JSON to device's config feed
+2. Device receives the message via MQTT subscription
+3. Hot-reloadable changes are applied immediately
+4. Restart-required changes are logged; device continues with current values until restarted
+
+**Fallback Behavior:**
+
+- If network is unavailable on boot, device uses local `config.json` only
+- Local `config.json` contains baseline/default configuration
+- For Display Node: if network unavailable, touch calibration defaults are acceptable since display has no data to show anyway
 
 #### Logging Module
 
@@ -799,6 +876,27 @@ During migration (if needed), the Valve Node accepts both JSON and legacy pipe-d
 | Background colors | 4 (black, white, red, blue) | Yes |
 | Skip on touch | Yes | No |
 
+**Fonts:**
+
+| Attribute | Value |
+|-----------|-------|
+| Source | [adafruit/circuitpython-fonts](https://github.com/adafruit/circuitpython-fonts) |
+| Format | PCF (Portable Compiled Format) |
+| License | GNU FreeFont - GPL with Font Exception (allows embedding) |
+| Font family | FreeSans (Regular, Bold, Oblique, BoldOblique) |
+| Sizes | 8, 10, 12, 14, 18, 24 point (as needed) |
+| Dependency | `adafruit_bitmap_font` library |
+
+**Installation:**
+
+```bash
+# Via circup (recommended)
+circup bundle-add adafruit/circuitpython-fonts
+circup install font_free_sans_18 font_free_sans_bold_24
+
+# Manual: Download from releases, copy PCF files to fonts/ directory
+```
+
 *UI Design: See [display-node-ui-design.md](display-node-ui-design.md) for screen layouts, navigation, and control specifications.*
 
 **Structure:**
@@ -840,8 +938,8 @@ class Dashboard:
         """Handle incoming Message object."""
         ...
 
-    def send_command(self, command, target, params=None):
-        """Send command to target device. params is optional dict."""
+    def send_command(self, command, params=None):
+        """Send command. params is optional dict."""
         ...
 
     def refresh_display(self):
@@ -1162,8 +1260,6 @@ Valve Node                   Cloud (Adafruit IO)              Display Node
     │                              │                                    │
     │── fill_stop (MQTT) ─────────>│── gateway (MQTT) ─────────────────>│
     │   reason: "timeout"          │                                    │
-    │                              │                                    │
-    │ [Enter cooldown period]      │                                    │
     └─────────────────────────────────────────────────────────────────────
 ```
 
@@ -1191,6 +1287,25 @@ Poolio Nodes                 Cloud (Adafruit IO)              Homebridge        
     │                              │<── command (MQTT) ───────────│                        │
     │<── command (MQTT) ───────────│                              │                        │
 ```
+
+### HTTP to MQTT Bridge
+
+Adafruit IO automatically bridges HTTP REST API and MQTT:
+
+- Data posted via HTTP POST appears to MQTT subscribers immediately
+- Data published via MQTT is accessible via HTTP GET
+- This enables Pool Node (HTTP-only due to deep sleep) to communicate with Valve/Display Nodes (MQTT)
+
+**Example:**
+
+```text
+Pool Node posts to:       POST /api/v2/{username}/feeds/gateway/data
+Valve/Display subscribe:  {username}/feeds/gateway
+```
+
+When Pool Node publishes sensor data via HTTPS, Valve Node and Display Node receive it on their MQTT subscriptions automatically. No bridging code is required.
+
+*Reference: [Adafruit IO API Cookbook](https://io.adafruit.com/api/docs/cookbook.html)*
 
 ---
 
@@ -1358,7 +1473,6 @@ All messages use a standard envelope:
 | `fill_stop` | Valve → Cloud | Fill operation stopped |
 | `command` | Cloud → Device | Remote command |
 | `command_response` | Device → Cloud | Command execution result |
-| `heartbeat` | Device → Cloud | Device alive signal |
 | `error` | Device → Cloud | Error report |
 | `config_update` | Cloud → Device | Configuration change |
 
@@ -1400,7 +1514,6 @@ All messages use a standard envelope:
   "timestamp": "2026-01-21T10:30:00-08:00",
   "payload": {
     "command": "valve_start",
-    "target": "valve-node-001",
     "source": "display-node-001"
   }
 }
@@ -1408,12 +1521,13 @@ All messages use a standard envelope:
 
 ### Supported Commands
 
-| Command | Target | Parameters | Description |
-|---------|--------|------------|-------------|
-| `valve_start` | Valve Node | (none) | Request fill operation (valve checks interlocks) |
-| `valve_stop` | Valve Node | (none) | Stop fill operation |
-| `device_reset` | Any | (none) | Restart the device |
-| `set_config` | Any | config key-value pairs | Update configuration |
+*Note: Commands are published to the gateway feed. Currently, Valve Node is the only command receiver. Multi-device routing can be added later if needed.*
+
+| Command | Parameters | Description |
+|---------|------------|-------------|
+| `valve_start` | (none) | Request fill operation (valve checks interlocks) |
+| `valve_stop` | (none) | Stop fill operation |
+| `device_reset` | (none) | Restart the device |
 
 ### Message Validation
 
@@ -1488,6 +1602,24 @@ When new versions are introduced, implementations SHOULD support:
 | Pool Node | 60s | ≤15s | Long timeout for WiFi + HTTP operations |
 | Valve Node | 30s | ≤7.5s | Moderate timeout; continuous operation |
 | Display Node | 120s | ≤30s | Longest timeout; UI rendering can be slow |
+
+### Pool Node Wake Cycle Timing Budget
+
+The Pool Node must complete its wake cycle within the 60-second watchdog timeout. Watchdog is fed before and after each blocking operation to ensure no single stage exceeds the 15-second feed interval.
+
+| Stage | Max Duration | Cumulative | Watchdog Feed |
+|-------|--------------|------------|---------------|
+| Init Watchdog | <1s | 1s | After |
+| WiFi Connect | 15s | 16s | Before + After |
+| Sync Time (HTTP) | 10s | 26s | Before + After |
+| Read Sensors | ~5s (with retries) | 31s | Before + After |
+| Transmit (HTTP) | 10s | 41s | Before + After |
+| Cleanup | <1s | 42s | Before |
+| **Total Maximum** | **~42s** | - | - |
+
+**Safety Margin:** 18 seconds (60s timeout - 42s max = 30% margin)
+
+This timing budget assumes worst-case durations for each stage. Typical cycles complete faster, providing additional margin.
 
 ### Failure Counter Pattern
 
@@ -1586,15 +1718,38 @@ def reconnect_with_backoff():
 - Close unused sockets after 60 seconds idle
 - Monitor socket count; reset if exceeding limit
 
+**ConnectionManager API Reference:**
+
+The `adafruit_connection_manager` library provides centralized socket management across libraries (requests, MiniMQTT).
+
+| Function/Property | Description |
+|-------------------|-------------|
+| `get_connection_manager(socket_pool)` | Get or create singleton for socket pool |
+| `connection_manager_close_all(pool, release_refs)` | Close all sockets, optionally release references |
+| `manager.available_socket_count` | Count of freed sockets available for reuse |
+| `manager.managed_socket_count` | Total sockets under management |
+| `manager.get_socket(host, port, proto, ...)` | Acquire and connect a socket |
+| `manager.free_socket(socket)` | Mark socket as available for reuse (not closed) |
+| `manager.close_socket(socket)` | Close a managed socket |
+
+*Reference: [ConnectionManager API Docs](https://docs.circuitpython.org/projects/connectionmanager/en/latest/api.html)*
+
 ```python
-# Socket cleanup pattern for CircuitPython
+# Socket management pattern for CircuitPython
 import adafruit_connection_manager
 
-def cleanup_sockets():
-    """Release idle sockets to prevent resource exhaustion."""
-    pool = adafruit_connection_manager.get_connection_manager(wifi.radio)
-    # Pool manages socket lifecycle; explicit cleanup not typically needed
-    # but monitor socket_available() if issues arise
+# Get the singleton manager
+manager = adafruit_connection_manager.get_connection_manager(wifi.radio)
+
+# Monitor socket usage
+print(f"Available: {manager.available_socket_count}")
+print(f"Managed: {manager.managed_socket_count}")
+
+# Close all sockets (e.g., before deep sleep or on error recovery)
+adafruit_connection_manager.connection_manager_close_all(
+    socket_pool=wifi.radio,
+    release_references=False
+)
 ```
 
 ### Sensor Failure Fallback
@@ -1700,31 +1855,32 @@ pooltemp        prod           poolio.pooltemp
 pooltemp        nonprod        poolio-nonprod.pooltemp
 ```
 
-### Legacy Feed Compatibility
+### MQTT Topic Format
 
-During migration, nodes publish to both new and legacy feeds to maintain backward compatibility with existing dashboards and integrations.
+Adafruit IO MQTT topics include the username prefix. The full topic format is:
 
-**Legacy Feed Mapping:**
+```text
+{username}/feeds/{group}.{feed}
+```
 
-| New Feed | Legacy Feed | Notes |
-|----------|-------------|-------|
-| `poolio.gateway` | `datastream.gateway` | JSON message bus |
-| `poolio.pooltemp` | `cabelanet.pooltemp` | Dashboard widget |
-| `poolio.outsidetemp` | `cabelanet.outsidetemp` | Dashboard widget |
-| `poolio.insidetemp` | (none) | New feed |
-| `poolio.poolnodebattery` | `cabelanet.poolnodebattery` | Dashboard widget |
-| `poolio.poolvalveruntime` | `cabelanet.poolvalveruntime` | Dashboard widget |
-| `poolio.valvestarttime` | `cabelanet.valvestarthour` | Renamed for clarity |
-| `poolio.config` | `cabelanet.config` | Configuration |
-| `poolio.events` | `events` | Standalone (no group) |
-| `poolio-nonprod.*` | `dev.*` | Non-production |
+**Examples (username: `chrishenry`):**
 
-**Migration Strategy:**
+| Environment | Feed | Full MQTT Topic |
+|-------------|------|-----------------|
+| prod | gateway | `chrishenry/feeds/poolio.gateway` |
+| nonprod | gateway | `chrishenry/feeds/poolio-nonprod.gateway` |
+| prod | pooltemp | `chrishenry/feeds/poolio.pooltemp` |
+| nonprod | config-valve-node | `chrishenry/feeds/poolio-nonprod.config-valve-node` |
 
-1. Create new `poolio` and `poolio-nonprod` groups in Adafruit IO
-2. Update nodes to publish to both new and legacy feeds
-3. Migrate dashboards and integrations to new feeds
-4. Deprecate legacy feeds after transition complete
+**Special Topics:**
+
+| Topic Pattern | Purpose |
+|---------------|---------|
+| `{username}/feeds/{feed}/get` | Request last value (publish empty message) |
+| `{username}/throttle` | Rate limit notifications |
+| `{username}/errors` | API error notifications |
+
+The username is read from `AIO_USERNAME` in settings.toml and interpolated at runtime.
 
 ### Configuration Example (settings.toml)
 
@@ -1748,14 +1904,12 @@ ENVIRONMENT = "nonprod"
     "prod": {
       "feedGroup": "poolio",
       "hardwareEnabled": true,
-      "debugLogging": false,
-      "legacyFeedsEnabled": true
+      "debugLogging": false
     },
     "nonprod": {
       "feedGroup": "poolio-nonprod",
       "hardwareEnabled": true,
-      "debugLogging": true,
-      "legacyFeedsEnabled": false
+      "debugLogging": true
     }
   }
 }
@@ -1768,6 +1922,25 @@ ENVIRONMENT = "nonprod"
   - Adafruit IO publishes here when your account is being throttled
 - Implement client-side rate tracking to avoid exceeding limits
 - Free tier: 30 data points/minute (system generates ~3/min)
+
+**Throttle Response Behavior:**
+
+When a throttle notification is received:
+
+1. Log the throttle event with timestamp
+2. Pause all publishing for 60 seconds
+3. Resume normal operation after pause
+4. If throttled again within 5 minutes: exponential backoff (120s, 240s, max 300s)
+5. Reset backoff after 5 minutes without throttle
+
+**Operations affected by throttle:**
+- Status message publishing (pool_status, valve_status, display_status)
+- Fill event publishing (fill_start, fill_stop)
+- Error message publishing
+
+**Operations NOT affected by throttle:**
+- Subscribing to feeds (receiving messages)
+- Local operations (valve control, sensor reading, display updates)
 
 ### Environment Switching (NFR-ENV-006)
 
@@ -2028,7 +2201,6 @@ config/
   "environment": "nonprod",
   "deviceId": "valve-node-001",
   "feedGroup": "poolio-nonprod",
-  "legacyFeedsEnabled": false,
   "valveStartTime": "09:00",
   "maxFillMinutes": 9,
   "fillWindowHours": 2,
@@ -2530,7 +2702,6 @@ The build sequence aligns with the migration phases defined in requirements.md S
 - [ ] Add comprehensive observability
 - [ ] Performance testing and optimization
 - [ ] Implement command message signing (NFR-SEC-003)
-- [ ] Add historical charts to Display Node (FR-DN-003)
 - [ ] Document all operational procedures
 
 ---
@@ -2562,6 +2733,29 @@ The build sequence aligns with the migration phases defined in requirements.md S
 - Touch debouncing (250ms) to prevent double-commands
 - Persist current screen for recovery from reset
 
+### Unconfigured Device Behavior
+
+If a device boots with missing or invalid credentials (WiFi SSID, password, or Adafruit IO API key):
+
+**Pool Node (C++):**
+- Log "Missing credentials" error to serial
+- Enter deep sleep immediately (preserve battery)
+- Retry on next wake cycle
+
+**Valve Node (CircuitPython):**
+- Log "Missing credentials" error to serial
+- Do not attempt WiFi/MQTT connection
+- Enter safe state (valve remains closed)
+- Blink LED pattern to indicate configuration needed
+
+**Display Node (CircuitPython):**
+- Display "Not Configured" message on screen
+- Show instructions: "Edit settings.toml with WiFi and API credentials"
+- No MQTT connection attempted
+- Touch input disabled until properly configured
+
+*Note: MVP requires manual configuration via settings.toml (CircuitPython) or secrets.h (C++). Captive portal provisioning is deferred to Issue 4.18.*
+
 ### State Management
 
 **Pool Node:**
@@ -2572,7 +2766,7 @@ The build sequence aligns with the migration phases defined in requirements.md S
 
 **Valve Node:**
 
-- State machine: `idle` → `filling` → `cooldown`
+- State machine: `idle` → `filling` → `idle`
 - On reset, valve closes automatically (GPIO goes low), state resets to `idle`
 - Track last pool_status timestamp for freshness checking
 - Maintain command timestamps for rate limiting (DEFERRED to Phase 4+)

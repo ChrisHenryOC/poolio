@@ -190,26 +190,23 @@ The Poolio system is a distributed IoT pool automation and monitoring platform c
 - **SHALL** display float switch status (water level indicator)
 - **SHALL** display pool node battery voltage
 
-#### FR-DN-003: Historical Data Visualization (Phase 3)
+#### FR-DN-003: Historical Data Visualization
 
-*Note: This requirement is deferred to Phase 3. MVP includes real-time status display only.*
+**24-Hour View (Sparkline) - MVP:**
 
-**24-Hour View (Sparkline):**
-
-- **SHALL** display 24-hour pool temperature history as sparkline graph
-- **SHALL** calculate data point interval to fit 24 hours into available chart width (see Section 6.4 for calculation)
+- **SHALL** display 24-hour pool temperature history as sparkline graph on main dashboard
+- **SHALL** downsample 288 data points (5-minute intervals over 24 hours) to 240 pixels (full screen width)
 - **SHALL** apply smoothing to sparkline data using simple moving average (window: 3 data points)
+- **SHALL** fetch historical data from cloud REST API at configurable refresh rate (default: 5 minutes)
+- **SHALL** display min/max temperature values on graph
 
-**7-Day and 30-Day Views (Whisker Charts):**
+**7-Day and 30-Day Views (Historical Data View Screen):**
+
+*Note: Requires separate implementation issues for the Historical Data View screen.*
 
 - **SHALL** display 7-day pool temperature history as whisker chart showing daily min/max/average
 - **SHALL** display 30-day pool temperature history as whisker chart showing daily min/max/average
 - **SHALL** provide touch buttons to switch between 24-hour, 7-day, and 30-day views
-
-**Common Requirements:**
-
-- **SHALL** fetch historical data from cloud REST API at configurable refresh rate (default: 5 minutes)
-- **SHALL** display min/max temperature values on graph
 - **SHALL** display temperature statistics (range, average) below chart
 
 *Note: Smoothing is applied only to the 24-hour sparkline view. Whisker charts display actual daily aggregations without smoothing. See Section 6.4 (Display Node Configuration) for chart parameters and data point interval calculation.*
@@ -421,13 +418,15 @@ The Poolio system is a distributed IoT pool automation and monitoring platform c
 - **SHALL** ignore commands that exceed rate limits (if rate limiting is implemented)
 - **SHALL** log rate-limited command attempts (if rate limiting is implemented)
 
-#### NFR-SEC-002b: Device Identity Validation
+#### NFR-SEC-002b: Device Identity Validation (DEFERRED)
 
 *Note: Validation is enforced by the receiving device since the cloud broker cannot filter by sender.*
 
-- **SHALL** maintain a list of trusted device IDs in configuration
-- **SHALL** ignore status messages from untrusted device IDs
-- **SHALL** log messages received from unknown device IDs
+*Implementation Note: Device identity validation is **DEFERRED** indefinitely. MQTT is already authenticated via Adafruit IO API key - only authorized users can publish to feeds. Implement only if devices are deployed in shared or untrusted environments.*
+
+- **SHOULD** maintain a list of trusted device IDs in configuration (if implemented)
+- **SHOULD** ignore status messages from untrusted device IDs (if implemented)
+- **SHOULD** log messages received from unknown device IDs (if implemented)
 
 #### NFR-SEC-003: Command Message Signing (Phase 3+)
 
@@ -803,7 +802,7 @@ build_flags =
 | staleDataIndicatorThreshold | 1800    | Config | Seconds before data is considered stale (30 minutes) |
 | localSensorPublishInterval  | 60      | Config | Seconds between publishing local temp to cloud       |
 
-*Note: Chart width is determined by display hardware (ILI9341: 320x240, portrait orientation = 240 pixels wide). Data point interval is calculated as `(chartHistoryHours × 60) / chartWidthPixels`. With 24 hours and 240 pixels: (24 × 60) / 240 = 6 minutes per data point.*
+*Note: Chart width is determined by display hardware (ILI9341: 320x240, portrait orientation = 240 pixels wide). The cloud API provides data at 5-minute intervals, yielding 288 data points for 24 hours (24 × 60 / 5 = 288). The sparkline downsamples these 288 points to fit the 240-pixel display width.*
 
 ---
 
@@ -1111,7 +1110,9 @@ The following parameters **SHALL NOT** be remotely configurable (require device 
 
 *Rationale: Restricting remote configuration to operational parameters prevents accidental or malicious misconfiguration of security-critical settings.*
 
-#### FR-MSG-010: Heartbeat Payload
+#### FR-MSG-010: Heartbeat Payload (DEFERRED)
+
+*Implementation Note: Heartbeat messages are deferred indefinitely. The Pool Node and Valve Node already send status messages at regular intervals, which serve as implicit heartbeats. The Display Node is a listener and does not need to signal its presence. Implement only if explicit device health monitoring becomes necessary.*
 
 ```json
 {
@@ -1243,10 +1244,11 @@ Message validation is critical for system reliability and security.
 
 - **SHALL** ignore command messages with timestamps older than 5 minutes
 - **SHOULD** ignore status messages with timestamps older than 15 minutes
-- **SHALL** log ignored stale messages with timestamp age
+- **SHALL** ignore messages with timestamps more than 1 minute in the future (clock skew protection)
+- **SHALL** log ignored stale or future messages with timestamp age
 - **SHALL** allow configurable freshness window per message type
 
-*Note: Timestamp freshness validation prevents replay attacks where captured messages are re-sent later. The 5-minute window for commands provides margin for clock drift while limiting the attack window. Status messages have a longer window since they are informational rather than actionable.*
+*Note: Timestamp freshness validation prevents replay attacks where captured messages are re-sent later. The 5-minute window for commands provides margin for clock drift while limiting the attack window. Status messages have a longer window since they are informational rather than actionable. The 1-minute future window prevents attacks using manipulated timestamps while allowing for minor clock drift between nodes.*
 
 **Handling Invalid Messages:**
 

@@ -554,9 +554,9 @@ def generate_historical_view(range_type="24h"):
     font_small = get_font(8)
     font_section = get_font(10)
 
-    # Chart area
-    chart_x, chart_y = 20, 50
-    chart_w, chart_h = 180, 120
+    # Chart area - full screen width (240px)
+    chart_x, chart_y = 0, 50
+    chart_w, chart_h = 240, 120
 
     # Generate appropriate sample data based on range
     if range_type == "24h":

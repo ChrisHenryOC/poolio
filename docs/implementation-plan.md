@@ -115,7 +115,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Temperature class with value (float) and unit (str)
   - [ ] Battery class with voltage (float) and percentage (int)
   - [ ] PoolStatus class with waterLevel, temperature, battery, reportingInterval
-  - [ ] ValveState class with isOpen (bool), isFilling (bool), fillElapsedSeconds (int or None)
+  - [ ] ValveState class with state (str: "open" or "closed"), isFilling (bool), currentFillDuration (int seconds or None), maxFillDuration (int seconds or None)
   - [ ] ScheduleInfo class with startTime (str "HH:MM"), windowHours (int), nextFillTime (str ISO 8601), nextCheckTime (str ISO 8601)
   - [ ] ValveStatus class with valve (ValveState), schedule (ScheduleInfo), temperature (Temperature)
   - [ ] DisplayStatus class with localTemperature, localHumidity
@@ -123,9 +123,9 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] FillStop class with fillStopTime, actualDuration, reason
   - [ ] Command class with command, parameters, source
   - [ ] CommandResponse class with commandTimestamp, command, status, errorCode, errorMessage
-  - [ ] Heartbeat class with uptime, freeMemory, errorCount, lastError
   - [ ] Error class with errorCode, errorMessage, severity, context
   - [ ] ConfigUpdate class with configKey, configValue, source
+  - [ ] ErrorCode constants for all 22 codes from FR-MSG-011 (SENSOR_*, NETWORK_*, BUS_*, CONFIG_*, SYSTEM_*, VALVE_*)
   - [ ] All classes have `__init__` with documented parameter types
 - **Files**:
   - `src/shared/messages/__init__.py`
@@ -146,6 +146,8 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] `parse_envelope(json_str)` returns (envelope_dict, payload_dict) tuple
   - [ ] `encode_message(message)` returns JSON string with proper envelope
   - [ ] `decode_message(json_str)` returns appropriate message type object
+  - [ ] Encoder converts Python `snake_case` attributes to JSON `camelCase` keys
+  - [ ] Decoder converts JSON `camelCase` keys to Python `snake_case` attributes
   - [ ] Timestamps use ISO 8601 format with timezone offset
   - [ ] Device ID format validated: lowercase letters, numbers, hyphens, 1-64 chars
 - **Files**:
@@ -156,7 +158,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `tests/unit/test_encoder.py`
   - `tests/unit/test_decoder.py`
 - **Dependencies**: 1.2
-- **Tests**: Round-trip encoding/decoding preserves all data
+- **Tests**: Round-trip encoding/decoding preserves all data; case conversion verified
 
 ---
 
@@ -247,6 +249,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] publish(feed, value, qos=0) publishes message
   - [ ] subscribe(feed, callback) registers callback for feed
   - [ ] subscribe_throttle(callback) subscribes to {username}/throttle
+  - [ ] Throttle handling: pause publishing 60s on throttle, exponential backoff on repeated throttles (120s, 240s, max 300s)
   - [ ] fetch_latest, fetch_history, sync_time use HTTP (fallback)
   - [ ] Uses QoS 0 for status messages, QoS 1 for commands
   - [ ] Feed names include environment prefix
@@ -727,6 +730,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Dependencies**: 2.15
 - **Tests**: Integration test with simulator
 - **Note**: Rate limiting (4.16) and legacy message support (4.17) deferred to Phase 4+
+- **Note**: CircuitPython `wifi.radio.connect()` has no timeout parameter. Watchdog (30s) provides recovery from WiFi hangs.
 
 ---
 
@@ -769,13 +773,20 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] config.json template with display settings
   - [ ] lib/ symlink to ../shared
   - [ ] ui/ directory structure created
-  - [ ] Arial BDF font files listed (7, 8, 10, 12, 14, 20, 22 point)
+  - [ ] fonts/ directory with FreeSans PCF fonts from circuitpython-fonts bundle
+  - [ ] adafruit_bitmap_font library installed
+- **Font Source**:
+  - Repository: <https://github.com/adafruit/circuitpython-fonts>
+  - Format: PCF (Portable Compiled Format)
+  - License: GNU FreeFont (GPL + Font Exception) - allows embedding
+  - Install via: `circup install font_free_sans_18` or download from Releases
+  - Required sizes determined during UI spike (Issue 2.19)
 - **Files**:
   - `src/display_node/code.py`
   - `src/display_node/config.json`
   - `src/display_node/lib` (symlink)
   - `src/display_node/ui/__init__.py`
-  - `docs/fonts-needed.md` (font file locations)
+  - `src/display_node/fonts/*.pcf` (FreeSans fonts from circuitpython-fonts)
 - **Dependencies**: 1.11
 - **Tests**: code.py imports shared modules without error
 
@@ -788,7 +799,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Description**: Implement theme module with color palette, font loading, and layout constants from UI design doc.
 - **Acceptance Criteria**:
   - [ ] COLORS dict with all colors from UI design (background, text, accent, alert, etc.)
-  - [ ] Font loading functions for Arial BDF files
+  - [ ] Font loading functions for Adafruit Free Sans fonts (8, 10, 12, 14, 18, 24pt)
   - [ ] Fallback to terminalio.FONT if custom fonts unavailable
   - [ ] SPACING dict with margins and padding values
   - [ ] Screen zone constants (header: 0-70, content: 70-205, chart: 205-320)
@@ -804,19 +815,22 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
-- **Description**: Implement base widget classes for text labels, buttons, and progress bars.
+- **Description**: Implement base widget classes for text labels, buttons, progress bars, and confirmation dialogs.
 - **Acceptance Criteria**:
   - [ ] TextLabel class with position, text, font, color, alignment
   - [ ] Button class with normal, pressed, disabled states
   - [ ] Button minimum touch target 44x44 pixels
   - [ ] ProgressBar class for battery display
+  - [ ] ConfirmationDialog class with title, message, Yes/Cancel buttons
+  - [ ] ConfirmationDialog modal overlay (dims background)
+  - [ ] ConfirmationDialog returns user selection (confirmed/cancelled)
   - [ ] All widgets can add themselves to displayio Group
   - [ ] update() method for dynamic content
 - **Files**:
   - `src/display_node/ui/widgets.py`
   - `tests/unit/test_widgets.py`
 - **Dependencies**: 2.21
-- **Tests**: Verify widget creation and state changes
+- **Tests**: Verify widget creation, state changes, and dialog interactions
 
 ---
 
@@ -861,6 +875,27 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
+### Issue 2.23b: Touch Calibration Utility
+
+- **Phase**: 2c - Display Node
+- **Type**: Tool
+- **Description**: Create touch calibration utility that displays targets at screen corners, captures raw touch coordinates, calculates calibration values, and publishes them to the device's config feed. Default calibration is stored in local `config.json` and overridden by config feed values on boot.
+- **Acceptance Criteria**:
+  - [ ] Displays crosshair target at each corner (top-left, top-right, bottom-left, bottom-right)
+  - [ ] User touches each target; utility captures raw STMPE610 coordinates
+  - [ ] Calculates calibration coefficients (x_min, x_max, y_min, y_max) from raw values
+  - [ ] Publishes updated config (with calibration values) to `config-display-node` feed
+  - [ ] Outputs calibration values to serial console as backup
+  - [ ] Instructions displayed on screen for each step
+  - [ ] Can be run standalone or as boot option (hold button during boot)
+- **Files**:
+  - `src/display_node/tools/calibrate_touch.py`
+- **Dependencies**: 2.23, 1.7 (cloud module for publishing to config feed)
+- **Tests**: Manual testing on hardware
+- **Note**: Default calibration is stored in local `config.json`. On boot, Display Node fetches latest config from config feed via HTTP GET and merges over defaults. If network unavailable, defaults are used (touch calibration non-critical when display has no data).
+
+---
+
 ### Issue 2.24: Main Dashboard Screen Layout
 
 - **Phase**: 2c - Display Node
@@ -870,13 +905,21 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Header zone: date (aqua), time (cornsilk 22pt), AM/PM, FILLING indicator (blue)
   - [ ] Content zone: Outside/Pool/Inside temperatures with labels
   - [ ] Right side: Next Fill time, Needs Water status, battery voltage, humidity
-  - [ ] Chart zone: Gray rectangle with centered "Chart" label (actual sparkline deferred)
+  - [ ] Chart zone: 24-hour temperature sparkline per UI design (chart zone 205-320px)
+  - [ ] Sparkline displays pool temperature history fetched from cloud API
+  - [ ] Sparkline downsamples 288 data points (5-min intervals) to 240 pixels (full screen width)
+  - [ ] Sparkline min/max values displayed on right edge per UI design
+  - [ ] Sparkline uses 3-point moving average smoothing per FR-DN-003
+  - [ ] Fallback to "No Data" message if historical data unavailable
   - [ ] update(state) refreshes all displayed values
 - **Files**:
   - `src/display_node/ui/screens.py`
+  - `src/display_node/ui/sparkline.py` (new - sparkline rendering)
   - `tests/unit/test_main_dashboard.py`
+  - `tests/unit/test_sparkline.py`
 - **Dependencies**: 2.23a (spike)
-- **Tests**: Verify layout renders correctly with mock state data
+- **Tests**: Verify layout renders correctly with mock state data; verify sparkline renders with test data
+- **Note**: This issue covers the main dashboard 24-hour sparkline. The separate Historical Screen with 7d/30d range selection is covered by Issue 2.36.
 
 ---
 
@@ -1106,6 +1149,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/display_node/code.py` (updated)
 - **Dependencies**: All issues 2.24 through 2.33a
 - **Tests**: Integration test with simulators
+- **Note**: CircuitPython `wifi.radio.connect()` has no timeout parameter. Watchdog (120s) provides recovery from WiFi hangs.
 
 ---
 
@@ -1129,6 +1173,37 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `docs/testing/display-node-hardware-test.md` (test results)
 - **Dependencies**: 2.34
 - **Tests**: Manual hardware testing with documented results
+
+---
+
+### Issue 2.36: Historical Screen
+
+- **Phase**: 2c - Display Node
+- **Type**: Core
+- **Description**: Implement Historical Screen with 24h/7d/30d range selection per UI design. Accessible from main dashboard chart zone. The 24h view reuses the sparkline. The 7d and 30d views display whisker charts with client-side daily aggregation from 60-minute resolution data.
+- **Acceptance Criteria**:
+  - [ ] Register touch zone on main dashboard chart area → Historical Screen
+  - [ ] Back button (←) in header with touch zone → main dashboard
+  - [ ] Range selector: three touch buttons (24h, 7d, 30d) with active state indicator
+  - [ ] 24h view: displays sparkline (reuses sparkline rendering from 2.24)
+  - [ ] 7d view: fetches 60-min resolution data (168 points), calculates daily min/max/avg client-side
+  - [ ] 30d view: fetches 60-min resolution data (720 points), calculates daily min/max/avg client-side
+  - [ ] Whisker chart renders daily min (bottom cap), max (top cap), average (center square)
+  - [ ] 7d whisker chart: 7 bars with day labels (M, T, W, T, F, S, S)
+  - [ ] 30d whisker chart: 30 bars with date labels (1, 8, 15, 22, 30)
+  - [ ] Chart uses full screen width (240px) per UI design
+  - [ ] Statistics section below chart: temperature range (min-max), average
+- **Data Fetching**:
+  - 7d: `GET /feeds/{feed}/data/chart?hours=168&resolution=60` → 168 data points (~2 KB)
+  - 30d: `GET /feeds/{feed}/data/chart?hours=720&resolution=60` → 720 data points (~8 KB)
+  - Group by day (24 points/day), calculate min/max/avg per day client-side
+- **Files**:
+  - `src/display_node/ui/screens.py` (updated - add HistoricalScreen)
+  - `src/display_node/ui/whisker_chart.py` (new - whisker chart rendering)
+  - `src/display_node/ui/history_data.py` (new - cloud API fetch + daily aggregation)
+  - `tests/unit/test_historical_screen.py`
+- **Dependencies**: 2.24 (sparkline)
+- **Tests**: Verify range switching, whisker chart rendering, API data fetching, daily aggregation calculation, navigation
 
 ---
 
@@ -1582,7 +1657,6 @@ These issues were deferred per Kent Beck's principles ("no just-in-case code", "
   - `schemas/fill-stop.json`
   - `schemas/command.json`
   - `schemas/command-response.json`
-  - `schemas/heartbeat.json`
   - `schemas/error.json`
   - `schemas/config-update.json`
   - `src/shared/messages/validator.py` (updated)
