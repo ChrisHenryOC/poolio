@@ -9,6 +9,7 @@
 > - Revised: 2026-01-23 (Kent Beck principles alignment, TDD workflow, issue splitting)
 > - Revised: 2026-01-23 (Architecture alignment: added ScheduleInfo/ValveState classes, message size/freshness validation, time resync, socket management, deferred captive portal)
 > - Revised: 2026-01-23 (Consistency fixes: cross-references, acceptance criteria clarity, removed cooldown state)
+> - Revised: 2026-01-26 (GitHub issues created: #9-#77)
 
 ## Overview
 
@@ -65,15 +66,15 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 | Phase | Name | Description | Issues |
 | ----- | ---- | ----------- | ------ |
-| 1 | Foundation | Shared libraries, messages, cloud abstraction | 1.1-1.11 |
-| 2a | Pool Node | C++ sensor node with deep sleep | 2.1-2.11 |
-| 2b | Valve Node | CircuitPython fill controller | 2.12-2.15, 2.18-2.19 (4.16-4.17 deferred) |
-| 2c | Display Node | CircuitPython touchscreen dashboard | 2.20-2.35 (includes 2.23a spike, 2.33a split) |
-| 3 | Simulators | Desktop simulators and integration tests | 3.1-3.7 |
-| 4 | Deployment | Nonprod and production deployment | 4.1-4.14 |
-| 4+ | Deferred | Features to implement only if needed | 4.15-4.18 |
+| 1 | Foundation | Shared libraries, messages, cloud abstraction | #9-#19 |
+| 2a | Pool Node | C++ sensor node with deep sleep | #20-#30 |
+| 2b | Valve Node | CircuitPython fill controller | #31-#36 |
+| 2c | Display Node | CircuitPython touchscreen dashboard | #37-#56 |
+| 3 | Simulators | Desktop simulators and integration tests | #57-#63 |
+| 4 | Deployment | Nonprod and production deployment | #64-#77 |
+| 4+ | Deferred | Features to implement only if needed | (not created) |
 
-**Note**: Phase 2a, 2b, and 2c can be worked in parallel. See Issues 4.16, 4.17 for deferred features.
+**Note**: Phase 2a, 2b, and 2c can be worked in parallel. Deferred features (4.15-4.18) are not tracked in GitHub until needed.
 
 ---
 
@@ -83,7 +84,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
-### Issue 1.1: Project Setup and Structure
+### Issue #9: Project Setup and Structure
 
 - **Phase**: 1 - Foundation
 - **Type**: Setup
@@ -105,7 +106,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
-### Issue 1.2: Message Type Classes
+### Issue #10: Message Type Classes
 
 - **Phase**: 1 - Foundation
 - **Type**: Model
@@ -131,12 +132,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/shared/messages/__init__.py`
   - `src/shared/messages/types.py`
   - `tests/unit/test_message_types.py`
-- **Dependencies**: 1.1
+- **Dependencies**: #9
 - **Tests**: Unit tests verify class instantiation and attribute access
 
 ---
 
-### Issue 1.3: Message Envelope and Encoding
+### Issue #11: Message Envelope and Encoding
 
 - **Phase**: 1 - Foundation
 - **Type**: Core
@@ -157,12 +158,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `tests/unit/test_envelope.py`
   - `tests/unit/test_encoder.py`
   - `tests/unit/test_decoder.py`
-- **Dependencies**: 1.2
+- **Dependencies**: #10
 - **Tests**: Round-trip encoding/decoding preserves all data; case conversion verified
 
 ---
 
-### Issue 1.4: Message Validation (Simple)
+### Issue #12: Message Validation (Simple)
 
 - **Phase**: 1 - Foundation
 - **Type**: Core
@@ -182,17 +183,17 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/shared/messages/validator.py`
   - `tests/unit/test_validator.py`
-- **Dependencies**: 1.3
+- **Dependencies**: #11
 - **Tests**: Validate both valid and invalid messages; verify error messages are descriptive; test size limits and timestamp rejection
-- **Deferred**: JSON Schema files and `strict=True` mode moved to Issue 4.15 (implement only if needed)
+- **Deferred**: JSON Schema files and `strict=True` mode moved to Phase 4+ (implement only if needed)
 
 ---
 
-### Issue 1.5: Mock Cloud Backend for Testing
+### Issue #13: Mock Cloud Backend for Testing
 
 - **Phase**: 1 - Foundation
 - **Type**: Core
-- **Description**: Create MockBackend for testing. Base class extraction deferred until MQTT client is implemented (Issue 1.7) per Kent Beck's "no premature abstraction" principle.
+- **Description**: Create MockBackend for testing. Base class extraction deferred until MQTT client is implemented (#15) per Kent Beck's "no premature abstraction" principle.
 - **Acceptance Criteria**:
   - [ ] MockBackend with in-memory storage for testing
   - [ ] MockBackend.publish(feed, value) stores messages by feed name
@@ -205,13 +206,13 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/shared/cloud/__init__.py`
   - `src/shared/cloud/mock.py`
   - `tests/unit/test_mock_backend.py`
-- **Dependencies**: 1.1
+- **Dependencies**: #9
 - **Tests**: MockBackend publish/subscribe flow works correctly
-- **Note**: CloudBackend base class will be extracted in Issue 1.7 when MQTT is implemented (see common interface pattern)
+- **Note**: CloudBackend base class will be extracted in #15 when MQTT is implemented (see common interface pattern)
 
 ---
 
-### Issue 1.6: AdafruitIO HTTP Client
+### Issue #14: AdafruitIO HTTP Client
 
 - **Phase**: 1 - Foundation
 - **Type**: Integration
@@ -229,12 +230,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/shared/cloud/adafruit_io_http.py`
   - `tests/unit/test_adafruit_io_http.py`
-- **Dependencies**: 1.5
+- **Dependencies**: #13
 - **Tests**: Unit tests with mocked HTTP responses; integration test against nonprod (manual)
 
 ---
 
-### Issue 1.7: AdafruitIO MQTT Client and Base Class Extraction
+### Issue #15: AdafruitIO MQTT Client and Base Class Extraction
 
 - **Phase**: 1 - Foundation
 - **Type**: Integration
@@ -260,12 +261,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/shared/cloud/mock.py` (updated to extend base)
   - `src/shared/cloud/adafruit_io_http.py` (updated to extend base)
   - `tests/unit/test_adafruit_io_mqtt.py`
-- **Dependencies**: 1.5, 1.6
+- **Dependencies**: #13, #14
 - **Tests**: Unit tests with mocked MQTT client; verify callback invocation; verify all backends implement same interface
 
 ---
 
-### Issue 1.8: Configuration Management
+### Issue #16: Configuration Management
 
 - **Phase**: 1 - Foundation
 - **Type**: Core
@@ -286,12 +287,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/shared/config/defaults.py`
   - `src/shared/config/environment.py`
   - `tests/unit/test_config.py`
-- **Dependencies**: 1.1
+- **Dependencies**: #9
 - **Tests**: Test config loading with various combinations of defaults and overrides
 
 ---
 
-### Issue 1.9: Logging Module
+### Issue #17: Logging Module
 
 - **Phase**: 1 - Foundation
 - **Type**: Core
@@ -309,12 +310,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/shared/logging/logger.py`
   - `src/shared/logging/rotating_handler.py`
   - `tests/unit/test_logging.py`
-- **Dependencies**: 1.1
+- **Dependencies**: #9
 - **Tests**: Verify log output format; test file rotation
 
 ---
 
-### Issue 1.10: Sensor Utilities
+### Issue #18: Sensor Utilities
 
 - **Phase**: 1 - Foundation
 - **Type**: Core
@@ -332,12 +333,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/shared/sensors/bus_recovery.py`
   - `tests/unit/test_retry.py`
   - `tests/unit/test_bus_recovery.py`
-- **Dependencies**: 1.9
+- **Dependencies**: #17
 - **Tests**: Verify retry count and delay timing; mock bus operations
 
 ---
 
-### Issue 1.11: Foundation Integration Test
+### Issue #19: Foundation Integration Test
 
 - **Phase**: 1 - Foundation
 - **Type**: Test
@@ -352,7 +353,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Test covers at least 3 message types (PoolStatus, ValveStatus, Command)
 - **Files**:
   - `tests/integration/test_message_flow.py`
-- **Dependencies**: 1.2, 1.3, 1.4, 1.5
+- **Dependencies**: #10, #11, #12, #13
 - **Tests**: Integration test passes with mock backend
 
 ---
@@ -361,7 +362,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
-### Issue 2.1: Pool Node Project Setup
+### Issue #20: Pool Node Project Setup
 
 - **Phase**: 2a - Pool Node
 - **Type**: Setup
@@ -379,12 +380,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/include/secrets.h.example`
   - `pool_node_cpp/lib/.gitkeep`
   - `pool_node_cpp/test/.gitkeep`
-- **Dependencies**: 1.1
+- **Dependencies**: #9
 - **Tests**: `pio run -e nonprod` compiles successfully
 
 ---
 
-### Issue 2.2: C++ Message Library
+### Issue #21: C++ Message Library
 
 - **Phase**: 2a - Pool Node
 - **Type**: Model
@@ -402,12 +403,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/lib/messages/pool_status.h`
   - `pool_node_cpp/lib/messages/pool_status.cpp`
   - `pool_node_cpp/test/test_messages.cpp`
-- **Dependencies**: 2.1
+- **Dependencies**: #20
 - **Tests**: PlatformIO test verifies JSON output format
 
 ---
 
-### Issue 2.3: C++ Config and Logging
+### Issue #22: C++ Config and Logging
 
 - **Phase**: 2a - Pool Node
 - **Type**: Core
@@ -426,12 +427,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/lib/config/environment.cpp`
   - `pool_node_cpp/lib/logging/logger.h`
   - `pool_node_cpp/lib/logging/logger.cpp`
-- **Dependencies**: 2.1
+- **Dependencies**: #20
 - **Tests**: Unit tests for config loading
 
 ---
 
-### Issue 2.4: WiFi Manager with Timeout
+### Issue #23: WiFi Manager with Timeout
 
 - **Phase**: 2a - Pool Node
 - **Type**: Core
@@ -447,12 +448,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/src/network/wifi_manager.h`
   - `pool_node_cpp/src/network/wifi_manager.cpp`
   - `pool_node_cpp/test/test_wifi_manager.cpp`
-- **Dependencies**: 2.3
+- **Dependencies**: #22
 - **Tests**: Unit test with mocked WiFi library
 
 ---
 
-### Issue 2.5: Time Sync and HTTP Client
+### Issue #24: Time Sync and HTTP Client
 
 - **Phase**: 2a - Pool Node
 - **Type**: Integration
@@ -470,12 +471,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/src/network/time_sync.cpp`
   - `pool_node_cpp/src/network/http_client.h`
   - `pool_node_cpp/src/network/http_client.cpp`
-- **Dependencies**: 2.4
+- **Dependencies**: #23
 - **Tests**: Unit tests with mocked HTTP responses
 
 ---
 
-### Issue 2.6: Temperature Sensor (DS18X20)
+### Issue #25: Temperature Sensor (DS18X20)
 
 - **Phase**: 2a - Pool Node
 - **Type**: Core
@@ -492,12 +493,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/src/sensors/temperature.h`
   - `pool_node_cpp/src/sensors/temperature.cpp`
   - `pool_node_cpp/test/test_temperature.cpp`
-- **Dependencies**: 2.1
+- **Dependencies**: #20
 - **Tests**: Unit test with mocked sensor
 
 ---
 
-### Issue 2.7: Water Level Sensor (Float Switch)
+### Issue #26: Water Level Sensor (Float Switch)
 
 - **Phase**: 2a - Pool Node
 - **Type**: Core
@@ -513,12 +514,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/src/sensors/water_level.h`
   - `pool_node_cpp/src/sensors/water_level.cpp`
   - `pool_node_cpp/test/test_water_level.cpp`
-- **Dependencies**: 2.1
+- **Dependencies**: #20
 - **Tests**: Unit test verifying consensus calculation
 
 ---
 
-### Issue 2.8: Battery Monitor (LC709203F)
+### Issue #27: Battery Monitor (LC709203F)
 
 - **Phase**: 2a - Pool Node
 - **Type**: Core
@@ -533,12 +534,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/src/sensors/battery.h`
   - `pool_node_cpp/src/sensors/battery.cpp`
   - `pool_node_cpp/test/test_battery.cpp`
-- **Dependencies**: 2.1
+- **Dependencies**: #20
 - **Tests**: Unit test with mocked I2C
 
 ---
 
-### Issue 2.9: Watchdog and Sleep Manager
+### Issue #28: Watchdog and Sleep Manager
 
 - **Phase**: 2a - Pool Node
 - **Type**: Core
@@ -557,12 +558,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/src/watchdog/watchdog.cpp`
   - `pool_node_cpp/src/power/sleep_manager.h`
   - `pool_node_cpp/src/power/sleep_manager.cpp`
-- **Dependencies**: 2.1
+- **Dependencies**: #20
 - **Tests**: Verify watchdog timing; sleep duration calculation
 
 ---
 
-### Issue 2.10: Pool Node Controller Integration
+### Issue #29: Pool Node Controller Integration
 
 - **Phase**: 2a - Pool Node
 - **Type**: Integration
@@ -586,13 +587,13 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `pool_node_cpp/src/pool_node.h`
   - `pool_node_cpp/src/pool_node.cpp`
   - `pool_node_cpp/src/main.cpp` (updated)
-- **Dependencies**: 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9
+- **Dependencies**: #21, #22, #23, #24, #25, #26, #27, #28
 - **Tests**: Integration test of full cycle with mocked hardware
 - **TDD Approach**: Write end-to-end test for complete wake cycle first, then add unit tests for error paths
 
 ---
 
-### Issue 2.11: Pool Node Hardware Testing
+### Issue #30: Pool Node Hardware Testing
 
 - **Phase**: 2a - Pool Node
 - **Type**: Test
@@ -609,7 +610,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Data appears correctly in Adafruit IO nonprod feeds
 - **Files**:
   - `docs/testing/pool-node-hardware-test.md` (test results)
-- **Dependencies**: 2.10
+- **Dependencies**: #29
 - **Tests**: Manual hardware testing with documented results
 
 ---
@@ -618,7 +619,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
-### Issue 2.12: Valve Node Project Setup
+### Issue #31: Valve Node Project Setup
 
 - **Phase**: 2b - Valve Node
 - **Type**: Setup
@@ -632,12 +633,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/valve_node/code.py`
   - `src/valve_node/config.json`
   - `src/valve_node/lib` (symlink)
-- **Dependencies**: 1.11
+- **Dependencies**: #19
 - **Tests**: code.py imports shared modules without error
 
 ---
 
-### Issue 2.13: Fill Scheduler
+### Issue #32: Fill Scheduler
 
 - **Phase**: 2b - Valve Node
 - **Type**: Core
@@ -652,12 +653,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/valve_node/scheduler.py`
   - `tests/unit/test_scheduler.py`
-- **Dependencies**: 2.12
+- **Dependencies**: #31
 - **Tests**: Unit tests for various time scenarios including edge cases
 
 ---
 
-### Issue 2.14: Safety Interlocks
+### Issue #33: Safety Interlocks
 
 - **Phase**: 2b - Valve Node
 - **Type**: Core
@@ -673,12 +674,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/valve_node/safety.py`
   - `tests/unit/test_safety.py`
-- **Dependencies**: 2.12
+- **Dependencies**: #31
 - **Tests**: Unit tests for each interlock condition and combinations
 
 ---
 
-### Issue 2.15: Valve Controller Core
+### Issue #34: Valve Controller Core
 
 - **Phase**: 2b - Valve Node
 - **Type**: Core
@@ -696,16 +697,16 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/valve_node/valve_controller.py`
   - `tests/unit/test_valve_controller.py`
-- **Dependencies**: 2.13, 2.14
+- **Dependencies**: #32, #33
 - **Tests**: Unit tests with mocked GPIO and cloud
 
 ---
 
-> **Note**: Issues 2.16 (Command Rate Limiting) and 2.17 (Legacy Message Support) were originally planned for Phase 2b but have been deferred. See Issues 4.16 and 4.17 in "Phase 4+: Deferred Features" for details.
+> **Note**: Command Rate Limiting and Legacy Message Support were originally planned for Phase 2b but have been deferred to Phase 4+ (implement only if needed).
 
 ---
 
-### Issue 2.18: Valve Node Integration
+### Issue #35: Valve Node Integration
 
 - **Phase**: 2b - Valve Node
 - **Type**: Integration
@@ -727,14 +728,14 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
     - Close unused sockets after 60 seconds idle
 - **Files**:
   - `src/valve_node/code.py` (updated)
-- **Dependencies**: 2.15
+- **Dependencies**: #34
 - **Tests**: Integration test with simulator
-- **Note**: Rate limiting (4.16) and legacy message support (4.17) deferred to Phase 4+
+- **Note**: Rate limiting and legacy message support deferred to Phase 4+
 - **Note**: CircuitPython `wifi.radio.connect()` has no timeout parameter. Watchdog (30s) provides recovery from WiFi hangs.
 
 ---
 
-### Issue 2.19: Valve Node Hardware Testing
+### Issue #36: Valve Node Hardware Testing
 
 - **Phase**: 2b - Valve Node
 - **Type**: Test
@@ -754,7 +755,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Integration test with Pool Node (or simulator)
 - **Files**:
   - `docs/testing/valve-node-hardware-test.md` (test results)
-- **Dependencies**: 2.18
+- **Dependencies**: #35
 - **Tests**: Manual hardware testing with documented results
 
 ---
@@ -763,7 +764,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
-### Issue 2.20: Display Node Project Setup
+### Issue #37: Display Node Project Setup
 
 - **Phase**: 2c - Display Node
 - **Type**: Setup
@@ -780,19 +781,19 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - Format: PCF (Portable Compiled Format)
   - License: GNU FreeFont (GPL + Font Exception) - allows embedding
   - Install via: `circup install font_free_sans_18` or download from Releases
-  - Required sizes determined during UI spike (Issue 2.19)
+  - Required sizes determined during UI spike (#41)
 - **Files**:
   - `src/display_node/code.py`
   - `src/display_node/config.json`
   - `src/display_node/lib` (symlink)
   - `src/display_node/ui/__init__.py`
   - `src/display_node/fonts/*.pcf` (FreeSans fonts from circuitpython-fonts)
-- **Dependencies**: 1.11
+- **Dependencies**: #19
 - **Tests**: code.py imports shared modules without error
 
 ---
 
-### Issue 2.21: Theme and Color Constants
+### Issue #38: Theme and Color Constants
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -806,12 +807,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/theme.py`
   - `tests/unit/test_theme.py`
-- **Dependencies**: 2.20
+- **Dependencies**: #37
 - **Tests**: Verify color values and font loading
 
 ---
 
-### Issue 2.22: Base Widget Classes
+### Issue #39: Base Widget Classes
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -829,12 +830,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/widgets.py`
   - `tests/unit/test_widgets.py`
-- **Dependencies**: 2.21
+- **Dependencies**: #38
 - **Tests**: Verify widget creation, state changes, and dialog interactions
 
 ---
 
-### Issue 2.23: Touch Handler
+### Issue #40: Touch Handler
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -850,12 +851,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/touch.py`
   - `tests/unit/test_touch.py`
-- **Dependencies**: 2.20
+- **Dependencies**: #37
 - **Tests**: Unit tests with mocked touch controller
 
 ---
 
-### Issue 2.23a: Display Node UI Spike
+### Issue #41: Display Node UI Spike
 
 - **Phase**: 2c - Display Node
 - **Type**: Spike
@@ -869,13 +870,13 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Document any adjustments needed to UI design based on hardware testing
 - **Files**:
   - `src/display_node/ui/spike.py` (temporary, can be deleted after spike)
-- **Dependencies**: 2.21, 2.22, 2.23
+- **Dependencies**: #38, #39, #40
 - **Tests**: Manual hardware testing - no automated tests for spike
-- **Outcome**: Learnings inform Issues 2.24-2.27 implementation; UI design doc updated if needed
+- **Outcome**: Learnings inform #43-#46 implementation; UI design doc updated if needed
 
 ---
 
-### Issue 2.23b: Touch Calibration Utility
+### Issue #42: Touch Calibration Utility
 
 - **Phase**: 2c - Display Node
 - **Type**: Tool
@@ -890,13 +891,13 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Can be run standalone or as boot option (hold button during boot)
 - **Files**:
   - `src/display_node/tools/calibrate_touch.py`
-- **Dependencies**: 2.23, 1.7 (cloud module for publishing to config feed)
+- **Dependencies**: #40, #15
 - **Tests**: Manual testing on hardware
 - **Note**: Default calibration is stored in local `config.json`. On boot, Display Node fetches latest config from config feed via HTTP GET and merges over defaults. If network unavailable, defaults are used (touch calibration non-critical when display has no data).
 
 ---
 
-### Issue 2.24: Main Dashboard Screen Layout
+### Issue #43: Main Dashboard Screen Layout
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -917,13 +918,13 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/display_node/ui/sparkline.py` (new - sparkline rendering)
   - `tests/unit/test_main_dashboard.py`
   - `tests/unit/test_sparkline.py`
-- **Dependencies**: 2.23a (spike)
+- **Dependencies**: #41
 - **Tests**: Verify layout renders correctly with mock state data; verify sparkline renders with test data
-- **Note**: This issue covers the main dashboard 24-hour sparkline. The separate Historical Screen with 7d/30d range selection is covered by Issue 2.36.
+- **Note**: This issue covers the main dashboard 24-hour sparkline. The separate Historical Screen with 7d/30d range selection is covered by #56.
 
 ---
 
-### Issue 2.25: Pool Node Detail Screen
+### Issue #44: Pool Node Detail Screen
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -939,12 +940,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/screens.py` (updated)
   - `tests/unit/test_pool_detail.py`
-- **Dependencies**: 2.24
+- **Dependencies**: #43
 - **Tests**: Verify display elements, touch zone on main dashboard, and back navigation
 
 ---
 
-### Issue 2.26: Valve Node Detail Screen
+### Issue #45: Valve Node Detail Screen
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -963,12 +964,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/screens.py` (updated)
   - `tests/unit/test_valve_detail.py`
-- **Dependencies**: 2.24, 2.22
+- **Dependencies**: #43, #39
 - **Tests**: Verify layout, touch zones, button states, and confirmation dialog
 
 ---
 
-### Issue 2.27: Settings Screen
+### Issue #46: Settings Screen
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -983,12 +984,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/screens.py` (updated)
   - `tests/unit/test_settings.py`
-- **Dependencies**: 2.24, 2.22
+- **Dependencies**: #43, #39
 - **Tests**: Verify layout, touch zones, and button actions
 
 ---
 
-### Issue 2.28: Stale Data Indicators
+### Issue #47: Stale Data Indicators
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -1003,12 +1004,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/screens.py` (updated)
   - `tests/unit/test_stale_indicators.py`
-- **Dependencies**: 2.24
+- **Dependencies**: #43
 - **Tests**: Verify indicator appears at correct threshold
 
 ---
 
-### Issue 2.29: Non-Production Indicator
+### Issue #48: Non-Production Indicator
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -1021,12 +1022,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/theme.py` (updated)
   - `src/display_node/ui/screens.py` (updated)
-- **Dependencies**: 2.21
+- **Dependencies**: #38
 - **Tests**: Verify border presence/absence based on environment
 
 ---
 
-### Issue 2.30: Burn-In Prevention
+### Issue #49: Burn-In Prevention
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -1042,12 +1043,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/ui/burn_in.py`
   - `tests/unit/test_burn_in.py`
-- **Dependencies**: 2.23
+- **Dependencies**: #40
 - **Tests**: Verify timing and touch interrupt
 
 ---
 
-### Issue 2.31: Local Sensor Reading (AHTx0)
+### Issue #50: Local Sensor Reading (AHTx0)
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -1063,12 +1064,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/local_sensors.py`
   - `tests/unit/test_local_sensors.py`
-- **Dependencies**: 2.20
+- **Dependencies**: #37
 - **Tests**: Unit test with mocked I2C
 
 ---
 
-### Issue 2.32: Dashboard State Management
+### Issue #51: Dashboard State Management
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -1083,12 +1084,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/state.py`
   - `tests/unit/test_state.py`
-- **Dependencies**: 2.20
+- **Dependencies**: #37
 - **Tests**: Unit tests for state updates and staleness
 
 ---
 
-### Issue 2.33: Dashboard Controller - Message Handling
+### Issue #52: Dashboard Controller - Message Handling
 
 - **Phase**: 2c - Display Node
 - **Type**: Integration
@@ -1101,12 +1102,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/display_node/dashboard.py`
   - `tests/unit/test_dashboard_messages.py`
-- **Dependencies**: 2.31, 2.32
+- **Dependencies**: #50, #51
 - **Tests**: Verify message subscription, initial fetch, and state updates
 
 ---
 
-### Issue 2.33a: Dashboard Controller - Commands and Navigation
+### Issue #53: Dashboard Controller - Commands and Navigation
 
 - **Phase**: 2c - Display Node
 - **Type**: Integration
@@ -1121,12 +1122,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/display_node/dashboard.py` (updated)
   - `tests/unit/test_dashboard_commands.py`
   - `tests/unit/test_dashboard_navigation.py`
-- **Dependencies**: 2.33
+- **Dependencies**: #52
 - **Tests**: Verify command publishing with feedback, navigation flow, and idle timeout
 
 ---
 
-### Issue 2.34: Display Node Integration
+### Issue #54: Display Node Integration
 
 - **Phase**: 2c - Display Node
 - **Type**: Integration
@@ -1147,13 +1148,13 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
     - Close unused sockets after 60 seconds idle
 - **Files**:
   - `src/display_node/code.py` (updated)
-- **Dependencies**: All issues 2.24 through 2.33a
+- **Dependencies**: #43, #44, #45, #46, #47, #48, #49, #50, #51, #52, #53
 - **Tests**: Integration test with simulators
 - **Note**: CircuitPython `wifi.radio.connect()` has no timeout parameter. Watchdog (120s) provides recovery from WiFi hangs.
 
 ---
 
-### Issue 2.35: Display Node Hardware Testing
+### Issue #55: Display Node Hardware Testing
 
 - **Phase**: 2c - Display Node
 - **Type**: Test
@@ -1171,12 +1172,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Integration test with Pool and Valve nodes
 - **Files**:
   - `docs/testing/display-node-hardware-test.md` (test results)
-- **Dependencies**: 2.34
+- **Dependencies**: #54
 - **Tests**: Manual hardware testing with documented results
 
 ---
 
-### Issue 2.36: Historical Screen
+### Issue #56: Historical Screen
 
 - **Phase**: 2c - Display Node
 - **Type**: Core
@@ -1185,7 +1186,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Register touch zone on main dashboard chart area → Historical Screen
   - [ ] Back button (←) in header with touch zone → main dashboard
   - [ ] Range selector: three touch buttons (24h, 7d, 30d) with active state indicator
-  - [ ] 24h view: displays sparkline (reuses sparkline rendering from 2.24)
+  - [ ] 24h view: displays sparkline (reuses sparkline rendering from #43)
   - [ ] 7d view: fetches 60-min resolution data (168 points), calculates daily min/max/avg client-side
   - [ ] 30d view: fetches 60-min resolution data (720 points), calculates daily min/max/avg client-side
   - [ ] Whisker chart renders daily min (bottom cap), max (top cap), average (center square)
@@ -1202,7 +1203,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/display_node/ui/whisker_chart.py` (new - whisker chart rendering)
   - `src/display_node/ui/history_data.py` (new - cloud API fetch + daily aggregation)
   - `tests/unit/test_historical_screen.py`
-- **Dependencies**: 2.24 (sparkline)
+- **Dependencies**: #43
 - **Tests**: Verify range switching, whisker chart rendering, API data fetching, daily aggregation calculation, navigation
 
 ---
@@ -1211,7 +1212,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
-### Issue 3.1: Simulator Common Utilities
+### Issue #57: Simulator Common Utilities
 
 - **Phase**: 3 - Simulators
 - **Type**: Core
@@ -1226,12 +1227,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `src/simulators/__init__.py`
   - `src/simulators/common.py`
   - `tests/unit/test_simulator_common.py`
-- **Dependencies**: 1.11
+- **Dependencies**: #19
 - **Tests**: Unit tests for argument parsing and value generation
 
 ---
 
-### Issue 3.2: Pool Node Simulator
+### Issue #58: Pool Node Simulator
 
 - **Phase**: 3 - Simulators
 - **Type**: Core
@@ -1247,12 +1248,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/simulators/pool_node.py`
   - `tests/unit/test_pool_simulator.py`
-- **Dependencies**: 3.1
+- **Dependencies**: #57
 - **Tests**: Verify message format and timing
 
 ---
 
-### Issue 3.3: Valve Node Simulator
+### Issue #59: Valve Node Simulator
 
 - **Phase**: 3 - Simulators
 - **Type**: Core
@@ -1270,12 +1271,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `src/simulators/valve_node.py`
   - `tests/unit/test_valve_simulator.py`
-- **Dependencies**: 3.1
+- **Dependencies**: #57
 - **Tests**: Verify command handling and event generation
 
 ---
 
-### Issue 3.4: Display Node Simulator
+### Issue #60: Display Node Simulator
 
 - **Phase**: 3 - Simulators
 - **Type**: Core
@@ -1289,12 +1290,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Device ID: display-node-001-sim
 - **Files**:
   - `src/simulators/display_node.py`
-- **Dependencies**: 3.1
+- **Dependencies**: #57
 - **Tests**: Verify subscription and logging
 
 ---
 
-### Issue 3.5: Integration Test Suite - Normal Flow
+### Issue #61: Integration Test Suite - Normal Flow
 
 - **Phase**: 3 - Simulators
 - **Type**: Test
@@ -1308,12 +1309,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Each test documented with scenario description
 - **Files**:
   - `tests/integration/test_normal_flow.py`
-- **Dependencies**: 3.2, 3.3, 3.4
+- **Dependencies**: #58, #59, #60
 - **Tests**: All integration tests pass
 
 ---
 
-### Issue 3.6: Integration Test Suite - Error Scenarios
+### Issue #62: Integration Test Suite - Error Scenarios
 
 - **Phase**: 3 - Simulators
 - **Type**: Test
@@ -1325,13 +1326,13 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] All tests use MockBackend
 - **Files**:
   - `tests/integration/test_error_scenarios.py`
-- **Dependencies**: 3.2, 3.3
+- **Dependencies**: #58, #59
 - **Tests**: All error scenario tests pass
-- **Note**: Rate limit testing deferred to Phase 4+ (Issue 4.16)
+- **Note**: Rate limit testing deferred to Phase 4+
 
 ---
 
-### Issue 3.7: Integration Test Suite - Edge Cases
+### Issue #63: Integration Test Suite - Edge Cases
 
 - **Phase**: 3 - Simulators
 - **Type**: Test
@@ -1343,9 +1344,9 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Test: Unsupported message version handling
 - **Files**:
   - `tests/integration/test_edge_cases.py`
-- **Dependencies**: 3.2, 3.3
+- **Dependencies**: #58, #59
 - **Tests**: All edge case tests pass
-- **Note**: Legacy message format testing deferred to Phase 4+ (Issue 4.17)
+- **Note**: Legacy message format testing deferred to Phase 4+
 
 ---
 
@@ -1353,7 +1354,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
-### Issue 4.1: Adafruit IO Feed Setup - Nonprod
+### Issue #64: Adafruit IO Feed Setup - Nonprod
 
 - **Phase**: 4 - Deployment
 - **Type**: Setup
@@ -1371,7 +1372,7 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 
 ---
 
-### Issue 4.2: Deploy Script for CircuitPython
+### Issue #65: Deploy Script for CircuitPython
 
 - **Phase**: 4 - Deployment
 - **Type**: Setup
@@ -1387,12 +1388,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `scripts/deploy_circuitpy.sh`
   - `docs/deployment/circuitpy-deployment.md`
-- **Dependencies**: 1.11
+- **Dependencies**: #19
 - **Tests**: Script runs successfully on test device
 
 ---
 
-### Issue 4.3: Configuration Files - Nonprod
+### Issue #66: Configuration Files - Nonprod
 
 - **Phase**: 4 - Deployment
 - **Type**: Setup
@@ -1408,12 +1409,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `config/nonprod/valve_node.json`
   - `config/nonprod/display_node.json`
   - `config/nonprod/settings.toml.template`
-- **Dependencies**: 4.1
+- **Dependencies**: #64
 - **Tests**: Config files validate against schema
 
 ---
 
-### Issue 4.4: Pool Node Nonprod Build and Deploy
+### Issue #67: Pool Node Nonprod Build and Deploy
 
 - **Phase**: 4 - Deployment
 - **Type**: Integration
@@ -1427,12 +1428,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Document deployment steps
 - **Files**:
   - `docs/deployment/pool-node-deployment.md`
-- **Dependencies**: 2.11, 4.1
+- **Dependencies**: #30, #64
 - **Tests**: Data visible in Adafruit IO nonprod
 
 ---
 
-### Issue 4.5: Valve Node Nonprod Deployment
+### Issue #68: Valve Node Nonprod Deployment
 
 - **Phase**: 4 - Deployment
 - **Type**: Integration
@@ -1446,12 +1447,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Document deployment steps
 - **Files**:
   - `docs/deployment/valve-node-deployment.md`
-- **Dependencies**: 2.19, 4.2, 4.3
+- **Dependencies**: #36, #65, #66
 - **Tests**: Commands processed correctly
 
 ---
 
-### Issue 4.6: Display Node Nonprod Deployment
+### Issue #69: Display Node Nonprod Deployment
 
 - **Phase**: 4 - Deployment
 - **Type**: Integration
@@ -1466,12 +1467,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Document deployment steps
 - **Files**:
   - `docs/deployment/display-node-deployment.md`
-- **Dependencies**: 2.35, 4.2, 4.3
+- **Dependencies**: #55, #65, #66
 - **Tests**: All screens functional
 
 ---
 
-### Issue 4.7: Nonprod System Integration Test
+### Issue #70: Nonprod System Integration Test
 
 - **Phase**: 4 - Deployment
 - **Type**: Test
@@ -1486,12 +1487,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Document all test scenarios and results
 - **Files**:
   - `docs/testing/nonprod-integration-test.md`
-- **Dependencies**: 4.4, 4.5, 4.6
+- **Dependencies**: #67, #68, #69
 - **Tests**: All integration scenarios pass
 
 ---
 
-### Issue 4.8: Nonprod 1-Week Stability Test
+### Issue #71: Nonprod 1-Week Stability Test
 
 - **Phase**: 4 - Deployment
 - **Type**: Test
@@ -1506,12 +1507,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Create stability report
 - **Files**:
   - `docs/testing/nonprod-stability-report.md`
-- **Dependencies**: 4.7
+- **Dependencies**: #70
 - **Tests**: Zero critical issues during stability test
 
 ---
 
-### Issue 4.9: Adafruit IO Feed Setup - Production
+### Issue #72: Adafruit IO Feed Setup - Production
 
 - **Phase**: 4 - Deployment
 - **Type**: Setup
@@ -1524,12 +1525,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Document migration path from legacy feeds
 - **Files**:
   - `docs/deployment/adafruit-io-prod-setup.md`
-- **Dependencies**: 4.8
+- **Dependencies**: #71
 - **Tests**: Verify feeds accessible via API
 
 ---
 
-### Issue 4.10: Configuration Files - Production
+### Issue #73: Configuration Files - Production
 
 - **Phase**: 4 - Deployment
 - **Type**: Setup
@@ -1545,12 +1546,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `config/prod/valve_node.json`
   - `config/prod/display_node.json`
   - `config/prod/settings.toml.template`
-- **Dependencies**: 4.9
+- **Dependencies**: #72
 - **Tests**: Config files validate against schema
 
 ---
 
-### Issue 4.11: Pre-Production Checklist
+### Issue #74: Pre-Production Checklist
 
 - **Phase**: 4 - Deployment
 - **Type**: Docs
@@ -1564,12 +1565,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
 - **Files**:
   - `docs/deployment/pre-production-checklist.md`
   - `docs/deployment/rollback-procedure.md`
-- **Dependencies**: 4.8, 4.10
+- **Dependencies**: #71, #73
 - **Tests**: Checklist reviewed by team
 
 ---
 
-### Issue 4.12: Production Deployment
+### Issue #75: Production Deployment
 
 - **Phase**: 4 - Deployment
 - **Type**: Integration
@@ -1585,12 +1586,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Document deployment time and any issues
 - **Files**:
   - `docs/deployment/production-deployment-log.md`
-- **Dependencies**: 4.11
+- **Dependencies**: #74
 - **Tests**: All nodes operational in production
 
 ---
 
-### Issue 4.13: Production Monitoring (48 hours)
+### Issue #76: Production Monitoring (48 hours)
 
 - **Phase**: 4 - Deployment
 - **Type**: Test
@@ -1605,12 +1606,12 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - [ ] Create monitoring summary
 - **Files**:
   - `docs/deployment/production-monitoring-48h.md`
-- **Dependencies**: 4.12
+- **Dependencies**: #75
 - **Tests**: System stable for 48 hours
 
 ---
 
-### Issue 4.14: Post-Deployment Documentation
+### Issue #77: Post-Deployment Documentation
 
 - **Phase**: 4 - Deployment
 - **Type**: Docs
@@ -1625,107 +1626,19 @@ Repeat for each acceptance criterion. Integration issues may require end-to-end 
   - `README.md` (updated)
   - `docs/operations/runbook.md`
   - `docs/operations/known-issues.md`
-- **Dependencies**: 4.13
+- **Dependencies**: #76
 - **Tests**: Documentation reviewed
 
 ---
 
 ### Phase 4+: Deferred Features (Implement Only If Needed)
 
-These issues were deferred per Kent Beck's principles ("no just-in-case code", "fewest elements"). Implement only when production experience proves they are necessary.
+These issues were deferred per Kent Beck's principles ("no just-in-case code", "fewest elements"). Implement only when production experience proves they are necessary. GitHub issues will be created when/if implementation is decided.
 
----
-
-### Issue 4.15: Full JSON Schema Validation
-
-- **Phase**: 4+ - Deferred
-- **Type**: Core
-- **Status**: **DEFERRED** - Implement only if simple validation proves insufficient
-- **Description**: Create JSON Schema files and implement strict validation mode for testing.
-- **Trigger**: Implement if message validation errors in production are hard to diagnose with simple validation.
-- **Acceptance Criteria**:
-  - [ ] All 11 schemas from Appendix A created (message-envelope, pool-status, valve-status, command, etc.)
-  - [ ] Schemas use JSON Schema Draft 2020-12
-  - [ ] `validate_message(json_str, strict=True)` uses full jsonschema validation (test mode)
-  - [ ] Integration with test suite for comprehensive validation
-- **Files**:
-  - `schemas/message-envelope.json`
-  - `schemas/pool-status.json`
-  - `schemas/valve-status.json`
-  - `schemas/display-status.json`
-  - `schemas/fill-start.json`
-  - `schemas/fill-stop.json`
-  - `schemas/command.json`
-  - `schemas/command-response.json`
-  - `schemas/error.json`
-  - `schemas/config-update.json`
-  - `src/shared/messages/validator.py` (updated)
-- **Dependencies**: 1.4
-- **Trigger**: Implement if production experience shows simple validation is insufficient
-
----
-
-### Issue 4.16: Command Rate Limiting
-
-- **Phase**: 4+ - Deferred
-- **Type**: Core
-- **Status**: **DEFERRED** - Implement only if command abuse detected in production
-- **Description**: Implement command rate limiting per NFR-SEC-002a.
-- **Trigger**: Implement if logs show repeated rapid commands causing issues (e.g., valve cycling, excessive resets).
-- **Acceptance Criteria**:
-  - [ ] Rate limits: valve_start (60s), valve_stop (10s), set_config (30s), device_reset (300s)
-  - [ ] Track last execution timestamp per command
-  - [ ] Reject commands that exceed rate limit
-  - [ ] Log rate-limited command attempts
-  - [ ] General message ingestion rate limit of 10 messages/second
-- **Files**:
-  - `src/valve_node/valve_controller.py` (updated)
-  - `tests/unit/test_rate_limiting.py`
-- **Dependencies**: 2.18
-
----
-
-### Issue 4.17: Legacy Message Support
-
-- **Phase**: 4+ - Deferred
-- **Type**: Core
-- **Status**: **DEFERRED** - Implement only if migration requires parallel operation with legacy nodes
-- **Description**: Implement legacy pipe-delimited message detection and parsing per FR-VN-006.
-- **Trigger**: Implement if production migration requires new Valve Node to coexist with legacy Pool Node or Display Node.
-- **Acceptance Criteria**:
-  - [ ] Detect format by first character: '{' = JSON, digit = legacy
-  - [ ] Parse legacy type 6 (manual start) as valve_start command
-  - [ ] Parse legacy type 99 (reset) as device_reset command
-  - [ ] Log deprecation warning for legacy messages
-  - [ ] Convert legacy messages to Command objects for uniform handling
-- **Files**:
-  - `src/valve_node/valve_controller.py` (updated)
-  - `tests/unit/test_legacy_messages.py`
-- **Dependencies**: 2.18
-
----
-
-### Issue 4.18: Credential Provisioning Captive Portal
-
-- **Phase**: 4+ - Deferred
-- **Type**: Core
-- **Status**: **DEFERRED** - Implement only when end-user deployment requires it
-- **Description**: Implement WiFi AP captive portal for credential provisioning per architecture Section 12. For MVP, credentials are configured manually via settings.toml (CircuitPython) or secrets.h (C++).
-- **Trigger**: Implement if devices will be deployed to users who cannot edit configuration files directly.
-- **Acceptance Criteria**:
-  - [ ] Device enters provisioning mode on first boot (no credentials) or BOOT button held during reset
-  - [ ] Device creates WiFi AP (e.g., "Poolio-PoolNode-Setup")
-  - [ ] Captive portal serves HTML form for WiFi SSID/password and Adafruit IO credentials
-  - [ ] C++: Credentials saved to NVS using ESP-IDF Preferences library
-  - [ ] CircuitPython: Credentials saved to microcontroller.nvm as JSON bytes
-  - [ ] Device reboots and connects to configured WiFi after provisioning
-  - [ ] Runtime credential access: check NVM first, fall back to settings.toml/secrets.h for development
-- **Files**:
-  - `pool_node_cpp/lib/config/nvs_config.cpp/h` (C++ NVS storage)
-  - `pool_node_cpp/src/provisioning/captive_portal.cpp/h` (C++ captive portal)
-  - `src/shared/config/nvm_config.py` (CircuitPython NVM storage)
-  - `src/shared/provisioning/captive_portal.py` (CircuitPython captive portal)
-- **Dependencies**: 2.11, 2.19, 2.35
+- **4.15: Full JSON Schema Validation** - Implement only if simple validation proves insufficient
+- **4.16: Command Rate Limiting** - Implement only if command abuse detected in production
+- **4.17: Legacy Message Support** - Implement only if migration requires parallel operation with legacy nodes
+- **4.18: Credential Provisioning Captive Portal** - Implement only when end-user deployment requires it
 
 ---
 
@@ -1734,84 +1647,83 @@ These issues were deferred per Kent Beck's principles ("no just-in-case code", "
 ```text
 Phase 1: Foundation
 =========================================
-[1.1] ─┬─> [1.2] ──> [1.3] ──> [1.4] ─┐
-       │                              │
-       ├─> [1.5] ──> [1.6] ──────────┤
-       │        └──> [1.7] ──────────┤
-       │                              │
-       ├─> [1.8] ────────────────────┤
-       │                              │
-       ├─> [1.9] ──> [1.10] ─────────┤
-       │                              │
-       └──────────────────────────────┴──> [1.11]
+[#9] ─┬─> [#10] ──> [#11] ──> [#12] ─┐
+      │                              │
+      ├─> [#13] ──> [#14] ──────────┤
+      │        └──> [#15] ──────────┤
+      │                              │
+      ├─> [#16] ────────────────────┤
+      │                              │
+      ├─> [#17] ──> [#18] ─────────┤
+      │                              │
+      └──────────────────────────────┴──> [#19]
 
 Phase 2a: Pool Node (can parallel with 2b, 2c)
 =========================================
-[2.1] ──> [2.2] ──> [2.3] ──> [2.4] ──> [2.5]
+[#20] ──> [#21] ──> [#22] ──> [#23] ──> [#24]
   │         │                             │
-  └─────────┴──> [2.6]                    │
-  │              [2.7]                    │
-  │              [2.8]                    │
+  └─────────┴──> [#25]                    │
+  │              [#26]                    │
+  │              [#27]                    │
   │                                       │
-  └──> [2.9] ─────────────────────────────┘
+  └──> [#28] ─────────────────────────────┘
                                           │
-       [2.6] + [2.7] + [2.8] + [2.9] ─────┴──> [2.10] ──> [2.11]
+       [#25] + [#26] + [#27] + [#28] ─────┴──> [#29] ──> [#30]
 
 Phase 2b: Valve Node (can parallel with 2a, 2c)
 =========================================
-[1.11] ──> [2.12] ──> [2.13] ──┐
-                      [2.14] ──┼──> [2.15] ──> [2.18] ──> [2.19]
-                                    (see [4.16], [4.17] for deferred features)
+[#19] ──> [#31] ──> [#32] ──┐
+                    [#33] ──┼──> [#34] ──> [#35] ──> [#36]
 
 Phase 2c: Display Node (can parallel with 2a, 2b)
 =========================================
-[1.11] ──> [2.20] ──> [2.21] ──> [2.22] ──> [2.23] ──> [2.23a] (spike)
-                        │                     │            │
-                        └─────────────────────┴────────────┘
-                                                           │
-                                                        [2.24]
-                               │
-                        ┌──────┴──────┬──────────────┐
-                        ▼             ▼              ▼
-                     [2.25]        [2.26]         [2.27]
-                        │             │              │
-                        └─────────────┴──────────────┘
-                                      │
-                               ┌──────┴──────┐
-                               ▼             ▼
-                            [2.28]        [2.29]
-                               │
-                            [2.30]
-                               │
-[2.20] ────────────────────> [2.31]
-                               │
-                            [2.32]
-                               │
-                            [2.33]
-                               │
-                           [2.33a] ◄──────────────────────┐
-                               │                          │
-                            [2.34] ──> [2.35]             │
-                                                           │
-Phase 3: Simulators                                        │
-=========================================                  │
-[1.11] ──> [3.1] ──> [3.2] ─┐                             │
-                    [3.3] ──┼──> [3.5] ──> [3.6] ──> [3.7]│
-                    [3.4] ──┘                              │
-                                                           │
-Phase 4: Deployment                                        │
-=========================================                  │
-[4.1] ────────────────────────────────────────────────────┘
+[#19] ──> [#37] ──> [#38] ──> [#39] ──> [#40] ──> [#41] (spike)
+                      │                     │            │
+                      └─────────────────────┴────────────┘
+                                                         │
+                                                      [#43]
+                             │
+                      ┌──────┴──────┬──────────────┐
+                      ▼             ▼              ▼
+                   [#44]        [#45]         [#46]
+                      │             │              │
+                      └─────────────┴──────────────┘
+                                    │
+                             ┌──────┴──────┐
+                             ▼             ▼
+                          [#47]        [#48]
+                             │
+                          [#49]
+                             │
+[#37] ────────────────────> [#50]
+                             │
+                          [#51]
+                             │
+                          [#52]
+                             │
+                         [#53] ◄──────────────────────┐
+                             │                          │
+                          [#54] ──> [#55]             │
+                                                         │
+Phase 3: Simulators                                      │
+=========================================                │
+[#19] ──> [#57] ──> [#58] ─┐                           │
+                   [#59] ──┼──> [#61] ──> [#62] ──> [#63]
+                   [#60] ──┘                            │
+                                                         │
+Phase 4: Deployment                                      │
+=========================================                │
+[#64] ───────────────────────────────────────────────────┘
   │
-  └──> [4.2] ──> [4.3]
+  └──> [#65] ──> [#66]
          │         │
-         ├─────────┼──> [4.4] ──┐
+         ├─────────┼──> [#67] ──┐
          │         │            │
-         │         ├──> [4.5] ──┼──> [4.7] ──> [4.8]
+         │         ├──> [#68] ──┼──> [#70] ──> [#71]
          │         │            │
-         │         └──> [4.6] ──┘
+         │         └──> [#69] ──┘
          │
-         └──> [4.9] ──> [4.10] ──> [4.11] ──> [4.12] ──> [4.13] ──> [4.14]
+         └──> [#72] ──> [#73] ──> [#74] ──> [#75] ──> [#76] ──> [#77]
 ```
 
 ---
@@ -1824,17 +1736,17 @@ The minimum timeline is determined by this sequence:
 
 Within phases, the critical paths are:
 
-**Phase 1**: `1.1 → 1.2 → 1.3 → 1.4 → 1.11` (message protocol must be complete first)
+**Phase 1**: `#9 → #10 → #11 → #12 → #19` (message protocol must be complete first)
 
-**Phase 2**: `2.20 → 2.21 → 2.22 → 2.23 → 2.24 → ... → 2.35` (Display Node has most issues)
+**Phase 2**: `#37 → #38 → #39 → #40 → #43 → ... → #55` (Display Node has most issues)
 
-**Phase 4**: `4.1 → 4.3 → 4.5 → 4.7 → 4.8 → 4.9 → ... → 4.14` (sequential deployment steps)
+**Phase 4**: `#64 → #66 → #68 → #70 → #71 → #72 → ... → #77` (sequential deployment steps)
 
 **Parallelization Opportunities**:
 
 - Phase 2a, 2b, 2c can all run in parallel after Phase 1 completes
-- Within Phase 1: Cloud clients (1.5-1.7) parallel with Config/Logging (1.8-1.10)
-- Phase 3 simulators (3.2-3.4) can develop in parallel
+- Within Phase 1: Cloud clients (#13-#15) parallel with Config/Logging (#16-#18)
+- Phase 3 simulators (#58-#60) can develop in parallel
 
 ---
 
@@ -1842,11 +1754,11 @@ Within phases, the critical paths are:
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| C++ message library incompatibility | Pool Node messages rejected by other nodes | Issue 3.5 includes cross-language validation test |
+| C++ message library incompatibility | Pool Node messages rejected by other nodes | #61 includes cross-language validation test |
 | CircuitPython memory constraints | Display Node crashes or hangs | Use memory profiling, minimize displayio groups |
 | STMPE610 touch calibration | Inaccurate touch zones | Store calibration in config.json, provide calibration utility |
-| ESP32 WiFi reliability | Dropped connections, missed messages | Implement reconnection with backoff (2.4, 2.18) |
-| Deep sleep affecting reliability | Pool Node fails to wake or transmit | 24-hour stability test (2.11), watchdog protection |
+| ESP32 WiFi reliability | Dropped connections, missed messages | Implement reconnection with backoff (#23, #35) |
+| Deep sleep affecting reliability | Pool Node fails to wake or transmit | 24-hour stability test (#30), watchdog protection |
 | Adafruit IO rate limits | Throttled data, missed updates | Monitor rate usage, subscribe to throttle topic |
 | Font file size | Display Node storage exceeded | Use subset fonts, verify available space |
 
@@ -1859,7 +1771,7 @@ All questions from architecture.md Section "Resolved Questions" have been addres
 1. ~~Pump Node Communication Protocol~~ - Deferred to Phase 5+
 2. ~~Display Node Touch UI Design~~ - Covered by display-node-ui-design.md
 3. ~~HomeKit Service Types~~ - Deferred to Phase 5
-4. ~~C++ Shared Library Strategy~~ - Independent implementation (Issue 2.2)
+4. ~~C++ Shared Library Strategy~~ - Independent implementation (#21)
 5. ~~OTA Updates~~ - Deferred to future phases
 6. ~~Device Discovery~~ - Static configuration for MVP
 
@@ -1870,13 +1782,13 @@ All questions from architecture.md Section "Resolved Questions" have been addres
 | Metric | Count |
 |--------|-------|
 | **Total Issues (MVP)** | 67 |
-| Phase 1 (Foundation) | 11 |
-| Phase 2a (Pool Node) | 11 |
-| Phase 2b (Valve Node) | 6 |
-| Phase 2c (Display Node) | 18 (incl. 2.23a spike, 2.33a split) |
-| Phase 3 (Simulators) | 7 |
-| Phase 4 (Deployment) | 14 |
-| Phase 4+ (Deferred) | 4 |
+| Phase 1 (Foundation) | 11 (#9-#19) |
+| Phase 2a (Pool Node) | 11 (#20-#30) |
+| Phase 2b (Valve Node) | 6 (#31-#36) |
+| Phase 2c (Display Node) | 20 (#37-#56) |
+| Phase 3 (Simulators) | 7 (#57-#63) |
+| Phase 4 (Deployment) | 14 (#64-#77) |
+| Phase 4+ (Deferred) | 4 (not created) |
 | **Critical Path Length** | ~25 issues (Phase 1 + longest Phase 2 + Phase 3-4) |
 | **Parallelizable Work** | Phase 2a/2b/2c, Phase 3 simulators |
 
@@ -1884,9 +1796,9 @@ All questions from architecture.md Section "Resolved Questions" have been addres
 
 - Deferred 4 features (rate limiting, legacy support, full schema validation, captive portal provisioning) per "no just-in-case code"
 - Added UI spike per "make it work first"
-- Defer abstractions: CloudBackend base class extracted only when needed (Issue 1.7)
+- Defer abstractions: CloudBackend base class extracted only when needed (#15)
 - Simplified validation: required-field checks plus size/freshness limits
 - TDD workflow (red/green/refactor) documented for all issues
-- Split large integration issues (2.33 → 2.33 + 2.33a) for smaller increments
+- Split large integration issues (#52 → #52 + #53) for smaller increments
 - Touch zone navigation tied to destination screen issues for cohesive feature delivery
 - Credential provisioning uses development shortcut (settings.toml/secrets.h) for MVP
