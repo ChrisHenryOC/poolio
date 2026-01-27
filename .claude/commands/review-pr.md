@@ -24,7 +24,7 @@ Launch in parallel (all 6 agents in a single message with multiple Task tool cal
 - test-coverage-reviewer
 - documentation-accuracy-reviewer
 - security-code-reviewer
-- gemini-review (optional - skip if GEMINI_API_KEY not set)
+- gemini-reviewer (optional - skip if GEMINI_API_KEY not set)
 
 Each agent reads `/tmp/pr$ARGUMENTS.diff` and saves findings to `code_reviews/PR$ARGUMENTS-<title>/{agent}.md`.
 
@@ -57,7 +57,7 @@ Use `branchFromThought` when:
 - Unclear if something is in PR scope
 - Multiple valid fix approaches exist
 
-Create `CONSOLIDATED-REVIEW.md`:
+Create `PR$ARGUMENTS-CONSOLIDATED-REVIEW.md`:
 
 ```markdown
 # Consolidated Review for PR #$ARGUMENTS

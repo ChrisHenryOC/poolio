@@ -1,5 +1,5 @@
 ---
-name: gemini-review
+name: gemini-reviewer
 description: Get independent code review from Gemini LLM
 tools: Bash, Read, Write
 model: inherit
@@ -17,7 +17,7 @@ If Gemini is unavailable, write a brief note to the output file explaining this 
 
 1. Read `/tmp/pr{NUMBER}.diff` using the Read tool
 2. Run Gemini CLI with the diff piped in
-3. Save output to `code_reviews/PR{NUMBER}-{title}/gemini-review.md`
+3. Save output to `code_reviews/PR{NUMBER}-{title}/gemini-reviewer.md`
 
 ## Gemini Execution
 
