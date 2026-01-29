@@ -53,7 +53,12 @@ class TestSnakeToCamel:
         assert snake_to_camel("node_001") == "node001"
 
     def test_leading_underscore_removed(self) -> None:
-        """Leading underscores are handled."""
+        """Leading underscores produce capitalized result in isolated function.
+
+        Note: This tests the snake_to_camel function in isolation. In the encoder,
+        attributes starting with '_' are skipped entirely (see _encode_value),
+        so this conversion never occurs during actual message encoding.
+        """
         # Leading underscore followed by letter capitalizes the letter
         assert snake_to_camel("_private") == "Private"
 
@@ -271,6 +276,13 @@ class TestEncodeMessage:
         with pytest.raises(ValueError, match="lowercase"):
             encode_message(temp, "Pool-Node-001", msg_type="temperature")
 
+    def test_encode_validates_msg_type_not_empty(self) -> None:
+        """encode_message validates msg_type is not empty."""
+        temp = Temperature(value=78.5)
+
+        with pytest.raises(ValueError, match="msg_type cannot be empty"):
+            encode_message(temp, "pool-node-001", msg_type="")
+
     def test_encode_preserves_dict_values(self) -> None:
         """encode_message preserves dict values without recursion into them."""
         # The parameters dict should be preserved as-is (it's already JSON-ready)
@@ -300,3 +312,38 @@ class TestEncodeMessage:
         data = json.loads(json_str)
 
         assert data["payload"]["context"] is None
+
+    def test_encode_preserves_snake_case_keys_in_parameters(self) -> None:
+        """encode_message preserves snake_case keys in parameters dict."""
+        # User data in parameters should NOT have keys converted to camelCase
+        cmd = Command(
+            command="set_config",
+            parameters={"retry_count": 3, "max_timeout": 120},
+            source="cloud",
+        )
+
+        json_str = encode_message(cmd, "display-node-001", msg_type="command")
+        data = json.loads(json_str)
+
+        # parameters keys should be preserved exactly as provided
+        assert "retry_count" in data["payload"]["parameters"]
+        assert "max_timeout" in data["payload"]["parameters"]
+        assert data["payload"]["parameters"]["retry_count"] == 3
+
+    def test_encode_preserves_snake_case_keys_in_context(self) -> None:
+        """encode_message preserves snake_case keys in context dict."""
+        # User data in context should NOT have keys converted to camelCase
+        error = Error(
+            error_code="SENSOR_READ_FAILURE",
+            error_message="Failed to read sensor",
+            severity="warning",
+            context={"sensor_type": "DS18X20", "retry_count": 3},
+        )
+
+        json_str = encode_message(error, "pool-node-001", msg_type="error")
+        data = json.loads(json_str)
+
+        # context keys should be preserved exactly as provided
+        assert "sensor_type" in data["payload"]["context"]
+        assert "retry_count" in data["payload"]["context"]
+        assert data["payload"]["context"]["sensor_type"] == "DS18X20"

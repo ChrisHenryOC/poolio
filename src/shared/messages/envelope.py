@@ -1,9 +1,9 @@
 # Message envelope functions for Poolio IoT system
 # FR-MSG-001 and FR-MSG-002: Message structure and envelope fields
 #
-# CircuitPython compatible: no dataclasses, no type annotations in signatures
-# Note: Type annotations are added for mypy/static analysis but the code
-# itself does not depend on them for runtime behavior.
+# CircuitPython compatible at runtime (no dataclasses, no abc module).
+# Type annotations are included for mypy/static analysis but are ignored
+# by CircuitPython's stripped-down Python interpreter.
 
 from __future__ import annotations
 
@@ -60,7 +60,10 @@ def _get_current_timestamp() -> str:
     else:
         # CircuitPython fallback: would need adafruit_datetime
         # For now, raise an error - caller should provide timestamp
-        raise NotImplementedError("Timestamp generation requires datetime module")
+        raise NotImplementedError(
+            "Timestamp generation requires datetime module. "
+            "On CircuitPython, provide the timestamp parameter explicitly."
+        )
 
 
 def create_envelope(

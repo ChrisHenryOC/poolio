@@ -1,9 +1,9 @@
 # Message decoder for Poolio IoT system
 # Converts JSON messages to Python objects with snake_case attributes
 #
-# CircuitPython compatible: no dataclasses, no type annotations in signatures
-# Note: Type annotations are added for mypy/static analysis but the code
-# itself does not depend on them for runtime behavior.
+# CircuitPython compatible at runtime (no dataclasses, no abc module).
+# Type annotations are included for mypy/static analysis but are ignored
+# by CircuitPython's stripped-down Python interpreter.
 
 from __future__ import annotations
 
