@@ -99,13 +99,13 @@ git checkout -b feature/issue-{number}-{desc}  # or fix/issue-{number}-{desc}
 1. **Red**: Write a failing test that defines the expected behavior
 
    ```bash
-   uv run pytest poc_a/tests/test_<module>.py -x  # Should fail
+   uv run pytest tests/unit/test_<module>.py -x  # Should fail
    ```
 
 2. **Green**: Write the minimum code to make the test pass
 
    ```bash
-   uv run pytest poc_a/tests/test_<module>.py -x  # Should pass
+   uv run pytest tests/unit/test_<module>.py -x  # Should pass
    ```
 
 3. **Refactor**: Clean up while keeping tests green
@@ -114,7 +114,7 @@ git checkout -b feature/issue-{number}-{desc}  # or fix/issue-{number}-{desc}
    - Simplify logic
 
    ```bash
-   uv run pytest poc_a/tests/ -x  # Still passes
+   uv run pytest tests/ -x  # Still passes
    ```
 
 4. **Commit** after each green/refactor cycle
@@ -134,12 +134,20 @@ git checkout -b feature/issue-{number}-{desc}  # or fix/issue-{number}-{desc}
 uv run pytest
 
 # Type checking
-uv run mypy poc_a/src/ poc_a/tests/
+uv run mypy src/ tests/
 
-# Linting and formatting
-uv run ruff format poc_a/src/ poc_a/tests/
-uv run ruff check poc_a/src/ poc_a/tests/ --fix
+# Linting and formatting (ORDER MATTERS)
+# 1. Fix lint issues first (may remove unused imports, etc.)
+uv run ruff check src/ tests/ --fix
+# 2. Format after lint fixes (to clean up any formatting issues from fixes)
+uv run ruff format src/ tests/
+# 3. Final verification - this MUST pass before committing
+uv run ruff format --check src/ tests/
+uv run ruff check src/ tests/
 ```
+
+**IMPORTANT:** Always run `ruff format --check` as the final step before committing.
+The `--fix` flags modify files, so you must verify formatting after all fixes are applied.
 
 All functions need type annotations.
 
