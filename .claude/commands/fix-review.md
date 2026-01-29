@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(poetry run:*)
+allowed-tools: Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(uv run:*)
 description: Fix high and medium severity issues from code review for PR $ARGUMENTS.
 ---
 
@@ -102,7 +102,7 @@ For each issue (Critical > High > Medium):
 ## VALIDATE AND COMMIT
 
 ```bash
-poetry run pytest tests/unit/ -x -q && poetry run mypy src/ && poetry run ruff check src/ tests/
+uv run ruff format --check src/ tests/ && uv run ruff check src/ tests/ && uv run mypy src/ tests/ && uv run pytest tests/unit/ -x -q
 git add -A && git commit -m "fix: Address review findings" && git push
 ```
 
