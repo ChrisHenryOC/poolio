@@ -1,6 +1,14 @@
-# Message type classes for Poolio IoT system
+# Message type classes and envelope functions for Poolio IoT system
 # CircuitPython compatible (no dataclasses, no type annotations in signatures)
 
+from .decoder import camel_to_snake, decode_message
+from .encoder import encode_message, snake_to_camel
+from .envelope import (
+    PROTOCOL_VERSION,
+    create_envelope,
+    parse_envelope,
+    validate_device_id,
+)
 from .types import (
     Battery,
     # Control types
@@ -26,6 +34,16 @@ from .types import (
 )
 
 __all__ = [
+    # Envelope functions
+    "PROTOCOL_VERSION",
+    "create_envelope",
+    "parse_envelope",
+    "validate_device_id",
+    # Encoder/decoder functions
+    "encode_message",
+    "decode_message",
+    "snake_to_camel",
+    "camel_to_snake",
     # Base types
     "WaterLevel",
     "Temperature",
