@@ -224,9 +224,7 @@ class CommandResponse:
         error_message: Error description if failed/rejected (str or None)
     """
 
-    def __init__(
-        self, command_timestamp, command, status, error_code=None, error_message=None
-    ):
+    def __init__(self, command_timestamp, command, status, error_code=None, error_message=None):
         self.command_timestamp = command_timestamp
         self.command = command
         self.status = status

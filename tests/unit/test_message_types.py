@@ -652,10 +652,6 @@ class TestErrorCode:
     def test_error_code_count(self) -> None:
         """ErrorCode has expected number of codes (20 per FR-MSG-011)."""
         # Count all public attributes (error codes)
-        codes = [
-            attr
-            for attr in dir(ErrorCode)
-            if not attr.startswith("_") and attr.isupper()
-        ]
+        codes = [attr for attr in dir(ErrorCode) if not attr.startswith("_") and attr.isupper()]
         # 20 error codes defined in FR-MSG-011
         assert len(codes) == 20
