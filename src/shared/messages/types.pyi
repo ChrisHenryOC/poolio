@@ -7,21 +7,25 @@ class WaterLevel:
     float_switch: bool
     confidence: float
     def __init__(self, float_switch: bool, confidence: float) -> None: ...
+    def __eq__(self, other: object) -> bool: ...
 
 class Temperature:
     value: float
     unit: str
     def __init__(self, value: float, unit: str = "fahrenheit") -> None: ...
+    def __eq__(self, other: object) -> bool: ...
 
 class Battery:
     voltage: float
     percentage: int
     def __init__(self, voltage: float, percentage: int) -> None: ...
+    def __eq__(self, other: object) -> bool: ...
 
 class Humidity:
     value: float
     unit: str
     def __init__(self, value: float, unit: str = "percent") -> None: ...
+    def __eq__(self, other: object) -> bool: ...
 
 class PoolStatus:
     water_level: WaterLevel
@@ -39,27 +43,27 @@ class PoolStatus:
 class ValveState:
     state: str
     is_filling: bool
-    current_fill_duration: int | None
-    max_fill_duration: int | None
+    current_fill_duration: int
+    max_fill_duration: int
     def __init__(
         self,
         state: str,
         is_filling: bool,
-        current_fill_duration: int | None,
-        max_fill_duration: int | None,
+        current_fill_duration: int,
+        max_fill_duration: int,
     ) -> None: ...
 
 class ScheduleInfo:
+    enabled: bool
     start_time: str
     window_hours: int
-    next_fill_time: str
-    next_check_time: str
+    next_scheduled_fill: str | None
     def __init__(
         self,
+        enabled: bool,
         start_time: str,
         window_hours: int,
-        next_fill_time: str,
-        next_check_time: str,
+        next_scheduled_fill: str | None = None,
     ) -> None: ...
 
 class ValveStatus:
@@ -128,8 +132,8 @@ class CommandResponse:
         command_timestamp: str,
         command: str,
         status: str,
-        error_code: str | None,
-        error_message: str | None,
+        error_code: str | None = None,
+        error_message: str | None = None,
     ) -> None: ...
 
 class Error:

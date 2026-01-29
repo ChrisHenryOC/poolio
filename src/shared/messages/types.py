@@ -16,6 +16,11 @@ class WaterLevel:
         self.float_switch = float_switch
         self.confidence = confidence
 
+    def __eq__(self, other):
+        if not isinstance(other, WaterLevel):
+            return NotImplemented
+        return self.float_switch == other.float_switch and self.confidence == other.confidence
+
 
 class Temperature:
     """Temperature measurement.
@@ -28,6 +33,11 @@ class Temperature:
     def __init__(self, value, unit="fahrenheit"):
         self.value = value
         self.unit = unit
+
+    def __eq__(self, other):
+        if not isinstance(other, Temperature):
+            return NotImplemented
+        return self.value == other.value and self.unit == other.unit
 
 
 class Battery:
@@ -42,6 +52,11 @@ class Battery:
         self.voltage = voltage
         self.percentage = percentage
 
+    def __eq__(self, other):
+        if not isinstance(other, Battery):
+            return NotImplemented
+        return self.voltage == other.voltage and self.percentage == other.percentage
+
 
 class Humidity:
     """Humidity measurement.
@@ -54,6 +69,11 @@ class Humidity:
     def __init__(self, value, unit="percent"):
         self.value = value
         self.unit = unit
+
+    def __eq__(self, other):
+        if not isinstance(other, Humidity):
+            return NotImplemented
+        return self.value == other.value and self.unit == other.unit
 
 
 # Composite types
@@ -82,8 +102,8 @@ class ValveState:
     Attributes:
         state: Valve state (str) - "open" or "closed"
         is_filling: Whether a fill operation is in progress (bool)
-        current_fill_duration: Seconds since fill started, or None (int or None)
-        max_fill_duration: Maximum fill duration in seconds, or None (int or None)
+        current_fill_duration: Seconds since fill started, 0 when not filling (int)
+        max_fill_duration: Maximum fill duration in seconds (int)
     """
 
     def __init__(self, state, is_filling, current_fill_duration, max_fill_duration):
@@ -97,17 +117,17 @@ class ScheduleInfo:
     """Valve fill schedule information (FR-MSG-005).
 
     Attributes:
+        enabled: Whether scheduling is enabled (bool)
         start_time: Schedule start time (str) - "HH:MM" format
         window_hours: Fill window duration in hours (int)
-        next_fill_time: Next scheduled fill time (str) - ISO 8601 format
-        next_check_time: Next schedule check time (str) - ISO 8601 format
+        next_scheduled_fill: Next scheduled fill time (str) - ISO 8601 format, or None
     """
 
-    def __init__(self, start_time, window_hours, next_fill_time, next_check_time):
+    def __init__(self, enabled, start_time, window_hours, next_scheduled_fill=None):
+        self.enabled = enabled
         self.start_time = start_time
         self.window_hours = window_hours
-        self.next_fill_time = next_fill_time
-        self.next_check_time = next_check_time
+        self.next_scheduled_fill = next_scheduled_fill
 
 
 class ValveStatus:
@@ -204,7 +224,9 @@ class CommandResponse:
         error_message: Error description if failed/rejected (str or None)
     """
 
-    def __init__(self, command_timestamp, command, status, error_code, error_message):
+    def __init__(
+        self, command_timestamp, command, status, error_code=None, error_message=None
+    ):
         self.command_timestamp = command_timestamp
         self.command = command
         self.status = status

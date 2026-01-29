@@ -1,27 +1,68 @@
 # Unit tests for message type classes
 # Tests for FR-MSG-004 through FR-MSG-013 payload types
 
+from shared.messages.types import (
+    Battery,
+    Command,
+    CommandResponse,
+    ConfigUpdate,
+    DisplayStatus,
+    Error,
+    ErrorCode,
+    FillStart,
+    FillStop,
+    Humidity,
+    PoolStatus,
+    ScheduleInfo,
+    Temperature,
+    ValveState,
+    ValveStatus,
+    WaterLevel,
+)
+
 
 class TestWaterLevel:
     """Tests for WaterLevel class."""
 
     def test_create_with_all_fields(self) -> None:
-        """WaterLevel requires floatSwitch and confidence."""
-        from shared.messages.types import WaterLevel
-
+        """WaterLevel requires float_switch and confidence."""
         water_level = WaterLevel(float_switch=True, confidence=0.95)
 
         assert water_level.float_switch is True
         assert water_level.confidence == 0.95
 
     def test_create_with_false_float_switch(self) -> None:
-        """WaterLevel works with False floatSwitch."""
-        from shared.messages.types import WaterLevel
-
+        """WaterLevel works with False float_switch."""
         water_level = WaterLevel(float_switch=False, confidence=0.8)
 
         assert water_level.float_switch is False
         assert water_level.confidence == 0.8
+
+    def test_confidence_at_minimum_boundary(self) -> None:
+        """WaterLevel accepts confidence of 0.0."""
+        water_level = WaterLevel(float_switch=True, confidence=0.0)
+
+        assert water_level.confidence == 0.0
+
+    def test_confidence_at_maximum_boundary(self) -> None:
+        """WaterLevel accepts confidence of 1.0."""
+        water_level = WaterLevel(float_switch=True, confidence=1.0)
+
+        assert water_level.confidence == 1.0
+
+    def test_equality(self) -> None:
+        """WaterLevel instances with same values are equal."""
+        a = WaterLevel(float_switch=True, confidence=0.95)
+        b = WaterLevel(float_switch=True, confidence=0.95)
+
+        assert a == b
+
+    def test_inequality(self) -> None:
+        """WaterLevel instances with different values are not equal."""
+        a = WaterLevel(float_switch=True, confidence=0.95)
+        b = WaterLevel(float_switch=False, confidence=0.95)
+
+        assert a != b
 
 
 class TestTemperature:
@@ -29,8 +70,6 @@ class TestTemperature:
 
     def test_create_with_value_and_unit(self) -> None:
         """Temperature requires value and optional unit."""
-        from shared.messages.types import Temperature
-
         temp = Temperature(value=78.5, unit="fahrenheit")
 
         assert temp.value == 78.5
@@ -38,8 +77,6 @@ class TestTemperature:
 
     def test_default_unit_is_fahrenheit(self) -> None:
         """Temperature defaults to fahrenheit unit."""
-        from shared.messages.types import Temperature
-
         temp = Temperature(value=72.0)
 
         assert temp.value == 72.0
@@ -47,12 +84,23 @@ class TestTemperature:
 
     def test_celsius_unit(self) -> None:
         """Temperature supports celsius unit."""
-        from shared.messages.types import Temperature
-
         temp = Temperature(value=25.0, unit="celsius")
 
         assert temp.value == 25.0
         assert temp.unit == "celsius"
+
+    def test_negative_temperature(self) -> None:
+        """Temperature accepts negative values."""
+        temp = Temperature(value=-10.5, unit="celsius")
+
+        assert temp.value == -10.5
+
+    def test_equality(self) -> None:
+        """Temperature instances with same values are equal."""
+        a = Temperature(value=72.0, unit="fahrenheit")
+        b = Temperature(value=72.0, unit="fahrenheit")
+
+        assert a == b
 
 
 class TestBattery:
@@ -60,8 +108,6 @@ class TestBattery:
 
     def test_create_with_all_fields(self) -> None:
         """Battery requires voltage and percentage."""
-        from shared.messages.types import Battery
-
         battery = Battery(voltage=3.85, percentage=72)
 
         assert battery.voltage == 3.85
@@ -69,8 +115,6 @@ class TestBattery:
 
     def test_full_battery(self) -> None:
         """Battery works at 100%."""
-        from shared.messages.types import Battery
-
         battery = Battery(voltage=4.2, percentage=100)
 
         assert battery.voltage == 4.2
@@ -78,12 +122,23 @@ class TestBattery:
 
     def test_low_battery(self) -> None:
         """Battery works at low levels."""
-        from shared.messages.types import Battery
-
         battery = Battery(voltage=3.3, percentage=5)
 
         assert battery.voltage == 3.3
         assert battery.percentage == 5
+
+    def test_percentage_at_zero_boundary(self) -> None:
+        """Battery accepts percentage of 0."""
+        battery = Battery(voltage=3.0, percentage=0)
+
+        assert battery.percentage == 0
+
+    def test_equality(self) -> None:
+        """Battery instances with same values are equal."""
+        a = Battery(voltage=3.85, percentage=72)
+        b = Battery(voltage=3.85, percentage=72)
+
+        assert a == b
 
 
 class TestHumidity:
@@ -91,8 +146,6 @@ class TestHumidity:
 
     def test_create_with_value_and_unit(self) -> None:
         """Humidity requires value and optional unit."""
-        from shared.messages.types import Humidity
-
         humidity = Humidity(value=45.0, unit="percent")
 
         assert humidity.value == 45.0
@@ -100,12 +153,23 @@ class TestHumidity:
 
     def test_default_unit_is_percent(self) -> None:
         """Humidity defaults to percent unit."""
-        from shared.messages.types import Humidity
-
         humidity = Humidity(value=60.0)
 
         assert humidity.value == 60.0
         assert humidity.unit == "percent"
+
+    def test_alternative_unit(self) -> None:
+        """Humidity supports alternative units."""
+        humidity = Humidity(value=0.45, unit="ratio")
+
+        assert humidity.unit == "ratio"
+
+    def test_equality(self) -> None:
+        """Humidity instances with same values are equal."""
+        a = Humidity(value=45.0, unit="percent")
+        b = Humidity(value=45.0, unit="percent")
+
+        assert a == b
 
 
 class TestPoolStatus:
@@ -113,13 +177,6 @@ class TestPoolStatus:
 
     def test_create_with_all_fields(self) -> None:
         """PoolStatus requires waterLevel, temperature, battery, reportingInterval."""
-        from shared.messages.types import (
-            Battery,
-            PoolStatus,
-            Temperature,
-            WaterLevel,
-        )
-
         water_level = WaterLevel(float_switch=True, confidence=0.95)
         temp = Temperature(value=78.5)
         battery = Battery(voltage=3.85, percentage=72)
@@ -142,24 +199,20 @@ class TestValveState:
 
     def test_create_closed_valve(self) -> None:
         """ValveState for a closed, idle valve."""
-        from shared.messages.types import ValveState
-
         valve = ValveState(
             state="closed",
             is_filling=False,
-            current_fill_duration=None,
+            current_fill_duration=0,
             max_fill_duration=540,
         )
 
         assert valve.state == "closed"
         assert valve.is_filling is False
-        assert valve.current_fill_duration is None
+        assert valve.current_fill_duration == 0
         assert valve.max_fill_duration == 540
 
     def test_create_open_filling_valve(self) -> None:
         """ValveState for an open, filling valve."""
-        from shared.messages.types import ValveState
-
         valve = ValveState(
             state="open",
             is_filling=True,
@@ -177,20 +230,39 @@ class TestScheduleInfo:
     """Tests for ScheduleInfo class (FR-MSG-005)."""
 
     def test_create_with_all_fields(self) -> None:
-        """ScheduleInfo requires startTime, windowHours, nextFillTime, nextCheckTime."""
-        from shared.messages.types import ScheduleInfo
-
+        """ScheduleInfo requires enabled, startTime, windowHours, nextScheduledFill."""
         schedule = ScheduleInfo(
+            enabled=True,
             start_time="09:00",
             window_hours=2,
-            next_fill_time="2026-01-20T09:00:00-08:00",
-            next_check_time="2026-01-20T08:55:00-08:00",
+            next_scheduled_fill="2026-01-20T09:00:00-08:00",
         )
 
+        assert schedule.enabled is True
         assert schedule.start_time == "09:00"
         assert schedule.window_hours == 2
-        assert schedule.next_fill_time == "2026-01-20T09:00:00-08:00"
-        assert schedule.next_check_time == "2026-01-20T08:55:00-08:00"
+        assert schedule.next_scheduled_fill == "2026-01-20T09:00:00-08:00"
+
+    def test_create_disabled_schedule(self) -> None:
+        """ScheduleInfo can be disabled."""
+        schedule = ScheduleInfo(
+            enabled=False,
+            start_time="09:00",
+            window_hours=2,
+        )
+
+        assert schedule.enabled is False
+        assert schedule.next_scheduled_fill is None
+
+    def test_create_without_next_scheduled_fill(self) -> None:
+        """ScheduleInfo can omit next_scheduled_fill."""
+        schedule = ScheduleInfo(
+            enabled=True,
+            start_time="10:00",
+            window_hours=3,
+        )
+
+        assert schedule.next_scheduled_fill is None
 
 
 class TestValveStatus:
@@ -198,24 +270,17 @@ class TestValveStatus:
 
     def test_create_with_all_fields(self) -> None:
         """ValveStatus requires valve, schedule, temperature."""
-        from shared.messages.types import (
-            ScheduleInfo,
-            Temperature,
-            ValveState,
-            ValveStatus,
-        )
-
         valve = ValveState(
             state="closed",
             is_filling=False,
-            current_fill_duration=None,
+            current_fill_duration=0,
             max_fill_duration=540,
         )
         schedule = ScheduleInfo(
+            enabled=True,
             start_time="09:00",
             window_hours=2,
-            next_fill_time="2026-01-20T09:00:00-08:00",
-            next_check_time="2026-01-20T08:55:00-08:00",
+            next_scheduled_fill="2026-01-20T09:00:00-08:00",
         )
         temp = Temperature(value=72.0)
 
@@ -231,8 +296,6 @@ class TestDisplayStatus:
 
     def test_create_with_all_fields(self) -> None:
         """DisplayStatus requires localTemperature and localHumidity."""
-        from shared.messages.types import DisplayStatus, Humidity, Temperature
-
         temp = Temperature(value=72.5)
         humidity = Humidity(value=45.0)
 
@@ -247,8 +310,6 @@ class TestFillStart:
 
     def test_create_scheduled_fill(self) -> None:
         """FillStart for a scheduled fill operation."""
-        from shared.messages.types import FillStart
-
         fill = FillStart(
             fill_start_time="2026-01-20T09:00:00-08:00",
             scheduled_end_time="2026-01-20T09:09:00-08:00",
@@ -263,8 +324,6 @@ class TestFillStart:
 
     def test_create_manual_fill(self) -> None:
         """FillStart for a manual fill operation."""
-        from shared.messages.types import FillStart
-
         fill = FillStart(
             fill_start_time="2026-01-20T14:30:00-08:00",
             scheduled_end_time="2026-01-20T14:39:00-08:00",
@@ -276,8 +335,6 @@ class TestFillStart:
 
     def test_create_low_water_fill(self) -> None:
         """FillStart for a low water triggered fill operation."""
-        from shared.messages.types import FillStart
-
         fill = FillStart(
             fill_start_time="2026-01-20T10:15:00-08:00",
             scheduled_end_time="2026-01-20T10:24:00-08:00",
@@ -293,8 +350,6 @@ class TestFillStop:
 
     def test_create_water_full_stop(self) -> None:
         """FillStop when water level is full."""
-        from shared.messages.types import FillStop
-
         fill = FillStop(
             fill_stop_time="2026-01-20T09:05:30-08:00",
             actual_duration=330,
@@ -307,8 +362,6 @@ class TestFillStop:
 
     def test_create_max_duration_stop(self) -> None:
         """FillStop when max duration reached."""
-        from shared.messages.types import FillStop
-
         fill = FillStop(
             fill_stop_time="2026-01-20T09:09:00-08:00",
             actual_duration=540,
@@ -319,8 +372,6 @@ class TestFillStop:
 
     def test_create_manual_stop(self) -> None:
         """FillStop when manually stopped."""
-        from shared.messages.types import FillStop
-
         fill = FillStop(
             fill_stop_time="2026-01-20T09:03:00-08:00",
             actual_duration=180,
@@ -331,8 +382,6 @@ class TestFillStop:
 
     def test_create_error_stop(self) -> None:
         """FillStop due to error."""
-        from shared.messages.types import FillStop
-
         fill = FillStop(
             fill_stop_time="2026-01-20T09:01:00-08:00",
             actual_duration=60,
@@ -343,8 +392,6 @@ class TestFillStop:
 
     def test_create_window_closed_stop(self) -> None:
         """FillStop when fill window closed."""
-        from shared.messages.types import FillStop
-
         fill = FillStop(
             fill_stop_time="2026-01-20T11:00:00-08:00",
             actual_duration=120,
@@ -359,8 +406,6 @@ class TestCommand:
 
     def test_create_valve_start_command(self) -> None:
         """Command for starting valve."""
-        from shared.messages.types import Command
-
         cmd = Command(
             command="valve_start",
             parameters={"maxDuration": 540},
@@ -373,8 +418,6 @@ class TestCommand:
 
     def test_create_valve_stop_command(self) -> None:
         """Command for stopping valve."""
-        from shared.messages.types import Command
-
         cmd = Command(
             command="valve_stop",
             parameters={},
@@ -386,8 +429,6 @@ class TestCommand:
 
     def test_create_device_reset_command(self) -> None:
         """Command for device reset."""
-        from shared.messages.types import Command
-
         cmd = Command(
             command="device_reset",
             parameters={},
@@ -398,8 +439,6 @@ class TestCommand:
 
     def test_create_set_config_command(self) -> None:
         """Command for setting configuration."""
-        from shared.messages.types import Command
-
         cmd = Command(
             command="set_config",
             parameters={"key": "valveStartTime", "value": "10:00"},
@@ -415,14 +454,10 @@ class TestCommandResponse:
 
     def test_create_success_response(self) -> None:
         """CommandResponse for successful command."""
-        from shared.messages.types import CommandResponse
-
         resp = CommandResponse(
             command_timestamp="2026-01-20T09:00:00-08:00",
             command="valve_start",
             status="success",
-            error_code=None,
-            error_message=None,
         )
 
         assert resp.command_timestamp == "2026-01-20T09:00:00-08:00"
@@ -431,10 +466,22 @@ class TestCommandResponse:
         assert resp.error_code is None
         assert resp.error_message is None
 
+    def test_create_success_response_with_explicit_none(self) -> None:
+        """CommandResponse for successful command with explicit None values."""
+        resp = CommandResponse(
+            command_timestamp="2026-01-20T09:00:00-08:00",
+            command="valve_start",
+            status="success",
+            error_code=None,
+            error_message=None,
+        )
+
+        assert resp.status == "success"
+        assert resp.error_code is None
+        assert resp.error_message is None
+
     def test_create_failed_response(self) -> None:
         """CommandResponse for failed command."""
-        from shared.messages.types import CommandResponse
-
         resp = CommandResponse(
             command_timestamp="2026-01-20T09:00:00-08:00",
             command="valve_start",
@@ -449,8 +496,6 @@ class TestCommandResponse:
 
     def test_create_rejected_response(self) -> None:
         """CommandResponse for rejected command."""
-        from shared.messages.types import CommandResponse
-
         resp = CommandResponse(
             command_timestamp="2026-01-20T09:00:00-08:00",
             command="valve_start",
@@ -467,8 +512,6 @@ class TestError:
 
     def test_create_warning_error(self) -> None:
         """Error with warning severity."""
-        from shared.messages.types import Error
-
         error = Error(
             error_code="SENSOR_READ_FAILURE",
             error_message="Failed to read temperature sensor after 3 retries",
@@ -483,8 +526,6 @@ class TestError:
 
     def test_create_error_severity(self) -> None:
         """Error with error severity."""
-        from shared.messages.types import Error
-
         error = Error(
             error_code="NETWORK_CONNECTION_FAILED",
             error_message="Failed to connect to WiFi",
@@ -496,8 +537,6 @@ class TestError:
 
     def test_create_critical_error(self) -> None:
         """Error with critical severity."""
-        from shared.messages.types import Error
-
         error = Error(
             error_code="SYSTEM_WATCHDOG_RESET",
             error_message="Device reset by watchdog",
@@ -510,8 +549,6 @@ class TestError:
 
     def test_create_info_error(self) -> None:
         """Error with info severity."""
-        from shared.messages.types import Error
-
         error = Error(
             error_code="SENSOR_OUT_OF_RANGE",
             error_message="Temperature reading unusually high",
@@ -523,8 +560,6 @@ class TestError:
 
     def test_create_debug_error(self) -> None:
         """Error with debug severity."""
-        from shared.messages.types import Error
-
         error = Error(
             error_code="BUS_I2C_FAILURE",
             error_message="I2C NAK received",
@@ -540,8 +575,6 @@ class TestConfigUpdate:
 
     def test_create_cloud_config_update(self) -> None:
         """ConfigUpdate from cloud source."""
-        from shared.messages.types import ConfigUpdate
-
         config = ConfigUpdate(
             config_key="valveStartTime",
             config_value="10:00",
@@ -554,8 +587,6 @@ class TestConfigUpdate:
 
     def test_create_local_config_update(self) -> None:
         """ConfigUpdate from local source."""
-        from shared.messages.types import ConfigUpdate
-
         config = ConfigUpdate(
             config_key="reportingInterval",
             config_value=120,
@@ -568,8 +599,6 @@ class TestConfigUpdate:
 
     def test_create_default_config_update(self) -> None:
         """ConfigUpdate from default source."""
-        from shared.messages.types import ConfigUpdate
-
         config = ConfigUpdate(
             config_key="maxFillDuration",
             config_value=540,
@@ -584,48 +613,36 @@ class TestErrorCode:
 
     def test_sensor_error_codes(self) -> None:
         """ErrorCode has all SENSOR_* codes."""
-        from shared.messages.types import ErrorCode
-
         assert ErrorCode.SENSOR_READ_FAILURE == "SENSOR_READ_FAILURE"
         assert ErrorCode.SENSOR_INIT_FAILURE == "SENSOR_INIT_FAILURE"
         assert ErrorCode.SENSOR_OUT_OF_RANGE == "SENSOR_OUT_OF_RANGE"
 
     def test_network_error_codes(self) -> None:
         """ErrorCode has all NETWORK_* codes."""
-        from shared.messages.types import ErrorCode
-
         assert ErrorCode.NETWORK_CONNECTION_FAILED == "NETWORK_CONNECTION_FAILED"
         assert ErrorCode.NETWORK_TIMEOUT == "NETWORK_TIMEOUT"
         assert ErrorCode.NETWORK_AUTH_FAILURE == "NETWORK_AUTH_FAILURE"
 
     def test_bus_error_codes(self) -> None:
         """ErrorCode has all BUS_* codes."""
-        from shared.messages.types import ErrorCode
-
         assert ErrorCode.BUS_I2C_FAILURE == "BUS_I2C_FAILURE"
         assert ErrorCode.BUS_ONEWIRE_FAILURE == "BUS_ONEWIRE_FAILURE"
         assert ErrorCode.BUS_SPI_FAILURE == "BUS_SPI_FAILURE"
 
     def test_config_error_codes(self) -> None:
         """ErrorCode has all CONFIG_* codes."""
-        from shared.messages.types import ErrorCode
-
         assert ErrorCode.CONFIG_INVALID_VALUE == "CONFIG_INVALID_VALUE"
         assert ErrorCode.CONFIG_MISSING_REQUIRED == "CONFIG_MISSING_REQUIRED"
         assert ErrorCode.CONFIG_SCHEMA_VIOLATION == "CONFIG_SCHEMA_VIOLATION"
 
     def test_system_error_codes(self) -> None:
         """ErrorCode has all SYSTEM_* codes."""
-        from shared.messages.types import ErrorCode
-
         assert ErrorCode.SYSTEM_MEMORY_LOW == "SYSTEM_MEMORY_LOW"
         assert ErrorCode.SYSTEM_WATCHDOG_RESET == "SYSTEM_WATCHDOG_RESET"
         assert ErrorCode.SYSTEM_UNEXPECTED_RESET == "SYSTEM_UNEXPECTED_RESET"
 
     def test_valve_error_codes(self) -> None:
         """ErrorCode has all VALVE_* codes."""
-        from shared.messages.types import ErrorCode
-
         assert ErrorCode.VALVE_SAFETY_INTERLOCK == "VALVE_SAFETY_INTERLOCK"
         assert ErrorCode.VALVE_MAX_DURATION == "VALVE_MAX_DURATION"
         assert ErrorCode.VALVE_ALREADY_ACTIVE == "VALVE_ALREADY_ACTIVE"
@@ -633,10 +650,12 @@ class TestErrorCode:
         assert ErrorCode.VALVE_HARDWARE_FAILURE == "VALVE_HARDWARE_FAILURE"
 
     def test_error_code_count(self) -> None:
-        """ErrorCode has expected number of codes."""
-        from shared.messages.types import ErrorCode
-
+        """ErrorCode has expected number of codes (20 per FR-MSG-011)."""
         # Count all public attributes (error codes)
-        codes = [attr for attr in dir(ErrorCode) if not attr.startswith("_") and attr.isupper()]
+        codes = [
+            attr
+            for attr in dir(ErrorCode)
+            if not attr.startswith("_") and attr.isupper()
+        ]
         # 20 error codes defined in FR-MSG-011
         assert len(codes) == 20
