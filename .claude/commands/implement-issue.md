@@ -151,6 +151,20 @@ The `--fix` flags modify files, so you must verify formatting after all fixes ar
 
 All functions need type annotations.
 
+### Verify Acceptance Criteria
+
+**REQUIRED before PR:** Re-read the original GitHub issue and verify ALL acceptance criteria are met:
+
+```bash
+gh issue view {issue_number}
+```
+
+- [ ] Each acceptance criterion is implemented
+- [ ] Each acceptance criterion has test coverage
+- [ ] No acceptance criteria were missed or misunderstood
+
+If any criteria are missing, implement them before proceeding.
+
 ## 5. PUSH & PR
 
 1. Push: `git push -u origin {branch}`
