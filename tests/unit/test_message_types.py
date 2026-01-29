@@ -2,7 +2,6 @@
 # Tests for FR-MSG-004 through FR-MSG-013 payload types
 
 
-
 class TestWaterLevel:
     """Tests for WaterLevel class."""
 
