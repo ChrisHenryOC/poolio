@@ -39,9 +39,7 @@ def assert_not_equal(actual, expected, msg=None):
     if actual == expected:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError(
-            f"assert_not_equal failed: {repr(actual)} == {repr(expected)}"
-        )
+        raise AssertionError(f"assert_not_equal failed: {repr(actual)} == {repr(expected)}")
 
 
 def assert_true(value, msg=None):
@@ -164,9 +162,7 @@ def assert_not_in(item, container, msg=None):
     if item in container:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError(
-            f"assert_not_in failed: {repr(item)} found in {repr(container)}"
-        )
+        raise AssertionError(f"assert_not_in failed: {repr(item)} found in {repr(container)}")
 
 
 def assert_is_instance(obj, class_or_tuple, msg=None):
@@ -196,9 +192,7 @@ def assert_greater(a, b, msg=None):
     if not a > b:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError(
-            f"assert_greater failed: {repr(a)} is not greater than {repr(b)}"
-        )
+        raise AssertionError(f"assert_greater failed: {repr(a)} is not greater than {repr(b)}")
 
 
 def assert_less(a, b, msg=None):

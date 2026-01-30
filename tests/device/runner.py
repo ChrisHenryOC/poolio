@@ -202,9 +202,7 @@ class TestRunner:
 
         print("---")
         print("=== TEST RUN END ===")
-        print(
-            f"SUMMARY: {passed} passed, {failed} failed, {errors} error, {skipped} skipped"
-        )
+        print(f"SUMMARY: {passed} passed, {failed} failed, {errors} error, {skipped} skipped")
         print(f"DURATION: {duration:.1f} seconds")
         print(f"MEMORY_END: {self.memory_end} bytes free")
 
