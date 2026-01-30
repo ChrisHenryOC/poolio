@@ -1,0 +1,12 @@
+# Pool Node CircuitPython libraries
+# Extends base.txt
+
+# Temperature sensor (DS18X20 OneWire)
+adafruit_onewire
+adafruit_ds18x20
+
+# Battery gauge (LC709203F)
+adafruit_lc709203f
+
+# I2C bus utilities (for battery gauge)
+adafruit_bus_device

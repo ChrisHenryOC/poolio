@@ -1,0 +1,16 @@
+# Display Node CircuitPython libraries
+# Extends base.txt
+
+# TFT Display (ILI9341)
+adafruit_ili9341
+adafruit_display_text
+adafruit_displayio_layout
+
+# Touchscreen (STMPE610)
+adafruit_stmpe610
+
+# Temperature/Humidity sensor (AHTx0)
+adafruit_ahtx0
+
+# I2C and SPI bus utilities
+adafruit_bus_device

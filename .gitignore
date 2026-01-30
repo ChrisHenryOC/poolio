@@ -159,3 +159,6 @@ secrets.h
 
 # Scratchpads (implementation notes)
 scratchpads/
+
+# CircuitPython bundle (downloaded, not checked in)
+circuitpython/bundle/

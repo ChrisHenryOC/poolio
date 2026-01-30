@@ -58,15 +58,48 @@ See [CLAUDE.md](CLAUDE.md) for detailed development workflow, code standards, an
 ### Quick Start
 
 ```bash
+# Install dependencies
+uv sync
+
+# Run unit tests
+uv run pytest tests/unit/
+
 # Lint markdown files
 npx markdownlint-cli docs/*.md
-
-# Deploy to CircuitPython device
-rsync -av --exclude='*.pyc' src/pool_node/ /Volumes/CIRCUITPY/
-
-# Monitor serial output
-screen /dev/tty.usbmodem* 115200
 ```
+
+### CircuitPython Deployment
+
+Deploy code and libraries to a connected CircuitPython device:
+
+```bash
+# Deploy to specific node type
+python circuitpython/deploy.py --target pool-node --source
+python circuitpython/deploy.py --target valve-node --source
+python circuitpython/deploy.py --target display-node --source
+
+# List available targets
+python circuitpython/deploy.py --list-targets
+```
+
+The deploy script automatically downloads the Adafruit CircuitPython bundle and installs the required libraries for each node type.
+
+### On-Device Testing
+
+Run tests directly on CircuitPython hardware:
+
+```bash
+# Deploy test framework to device
+python circuitpython/deploy.py --target test --source --tests
+
+# Monitor test output
+python scripts/serial_monitor.py --reset --timeout 60
+```
+
+| Test Suite | Count | Location | Runner |
+|------------|-------|----------|--------|
+| Unit tests | 206 | `tests/unit/` | pytest (Blinka) |
+| Device tests | 27 | `tests/device/` | CircuitPython hardware |
 
 ### CI/CD
 

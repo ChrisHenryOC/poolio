@@ -1,0 +1,6 @@
+# On-device test libraries
+# Extends base.txt
+# Used for running device tests via /run-device-tests
+
+# No additional libraries currently required beyond base
+# Tests use the shared/messages module which only needs datetime

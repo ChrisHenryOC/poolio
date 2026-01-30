@@ -8,7 +8,10 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+try:
+    from typing import Any
+except ImportError:
+    Any = None  # CircuitPython doesn't have typing module
 
 from .envelope import parse_envelope
 from .types import (
