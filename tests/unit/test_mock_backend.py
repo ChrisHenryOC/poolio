@@ -1,6 +1,7 @@
 # Tests for MockBackend cloud implementation
 
 import time
+from unittest.mock import patch
 
 from shared.cloud import MockBackend
 
@@ -279,3 +280,12 @@ class TestMockBackendSyncTime:
 
         result_timestamp = result.timestamp()
         assert before <= result_timestamp <= after
+
+    def test_sync_time_raises_when_datetime_unavailable(self):
+        """sync_time() raises RuntimeError when datetime is None."""
+        import pytest
+
+        backend = MockBackend()
+        with patch("shared.cloud.mock.datetime", None):
+            with pytest.raises(RuntimeError, match="datetime module not available"):
+                backend.sync_time()

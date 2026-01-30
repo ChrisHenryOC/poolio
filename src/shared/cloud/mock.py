@@ -48,6 +48,11 @@ class MockBackend:
         """
         self._connected = False
 
+    @property
+    def is_connected(self):
+        """Return True if connected to the backend."""
+        return self._connected
+
     def publish(self, feed, value):
         """
         Publish a value to a feed.
@@ -131,6 +136,9 @@ class MockBackend:
 
         Returns:
             datetime object representing current time
+
+        Raises:
+            RuntimeError: If datetime module is not available
         """
         if datetime is None:
             raise RuntimeError("datetime module not available")
