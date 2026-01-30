@@ -92,9 +92,29 @@ poolio_rearchitect/
 │       ├── circuitpython.yml # Python tests (Adafruit Blinka)
 │       ├── cpp.yml          # PlatformIO builds
 │       └── nodejs.yml       # Homebridge plugin tests
+├── circuitpython/           # CircuitPython deployment tools
+│   ├── requirements/        # Library requirements per target
+│   │   ├── base.txt         # Common libraries (all nodes)
+│   │   ├── pool-node.txt    # Pool node specific
+│   │   ├── valve-node.txt   # Valve node specific
+│   │   ├── display-node.txt # Display node specific
+│   │   └── test.txt         # On-device testing
+│   ├── deploy.py            # Deployment script
+│   └── bundle/              # Downloaded Adafruit bundle (.gitignore'd)
 ├── docs/
 │   ├── requirements.md      # Comprehensive requirements document
 │   └── architecture.md      # System architecture and implementation details
+├── scripts/
+│   └── serial_monitor.py    # Serial port monitor for device testing
+├── src/
+│   └── shared/              # Shared libraries (CircuitPython compatible)
+│       └── messages/        # JSON message protocol (implemented)
+├── tests/
+│   ├── unit/                # Unit tests (pytest, runs with Blinka)
+│   └── device/              # On-device tests (runs on actual hardware)
+│       ├── runner.py        # Lightweight test runner for CircuitPython
+│       ├── assertions.py    # CircuitPython-compatible assertions
+│       └── shared/          # Tests for shared library
 ├── CLAUDE.md                # This file - project guidance
 └── README.md                # Project overview
 ```
@@ -105,7 +125,7 @@ poolio_rearchitect/
 poolio_rearchitect/
 ├── src/
 │   ├── shared/              # Shared libraries (CircuitPython compatible)
-│   │   ├── messages/        # JSON message protocol
+│   │   ├── messages/        # JSON message protocol (implemented)
 │   │   ├── cloud/           # Cloud backend abstraction
 │   │   ├── config/          # Configuration management
 │   │   ├── logging/         # Structured logging (adafruit_logging)
@@ -115,8 +135,7 @@ poolio_rearchitect/
 │   └── simulators/          # Desktop simulators (CPython)
 ├── pool_node_cpp/           # Pool sensor (C++/PlatformIO)
 ├── homebridge/              # Homebridge plugin for HomeKit (Node.js)
-├── schemas/                 # JSON schemas for validation
-└── tests/                   # Unit and integration tests
+└── schemas/                 # JSON schemas for validation
 ```
 
 **See `docs/architecture.md` Section 5 (Directory Structure)** for complete file layout.
@@ -126,14 +145,30 @@ poolio_rearchitect/
 ### For CircuitPython Nodes
 
 ```bash
-# Deploy to device (when connected via USB)
-# Files are copied directly to CIRCUITPY drive
-rsync -av --exclude='*.pyc' src/pool_node/ /Volumes/CIRCUITPY/
+# Deploy libraries and source code to device
+python circuitpython/deploy.py --target pool-node --source
+python circuitpython/deploy.py --target valve-node --source
+python circuitpython/deploy.py --target display-node --source
 
-# Monitor serial output
+# Deploy for on-device testing
+python circuitpython/deploy.py --target test --source --tests
+
+# List available deployment targets
+python circuitpython/deploy.py --list-targets
+
+# Monitor serial output (preferred - has timeout handling)
+python scripts/serial_monitor.py --timeout 60
+
+# Alternative: screen (interactive)
 screen /dev/tty.usbmodem* 115200
 # Exit: Ctrl+A, K, Y
 ```
+
+The deploy script automatically:
+
+- Downloads the Adafruit CircuitPython bundle if not present
+- Installs base libraries + target-specific libraries
+- Optionally copies `src/shared/` and `tests/device/` to device
 
 ### For C++ Nodes (Arduino/PlatformIO)
 
@@ -257,9 +292,10 @@ CircuitPython is a subset of Python with limited standard library. The following
 | `dataclasses` | Plain classes with `__init__` |
 | `abc` (ABC, abstractmethod) | Duck typing with `NotImplementedError` |
 | `jsonschema` | Simplified manual validation on-device |
-| `typing` (Optional, Callable, etc.) | Type info in docstrings only |
-| `datetime` | `adafruit_datetime` library |
+| `typing` (Any, Optional, etc.) | Conditional import with try/except (see below) |
+| `datetime` | `adafruit_datetime` library (or conditional import) |
 | `logging` | `adafruit_logging` library |
+| `str.capitalize()` | Manual: `s[0].upper() + s[1:]` |
 
 **Pattern Examples:**
 
@@ -291,6 +327,27 @@ def get_feed_name(logical_name: str, environment: str) -> str:
 # CORRECT - types in docstrings
 def get_feed_name(logical_name, environment):
     """Get feed name. Args are strings, returns string."""
+
+# WRONG - unconditional typing import
+from typing import Any
+
+# CORRECT - conditional import for CircuitPython compatibility
+try:
+    from typing import Any
+except ImportError:
+    Any = None  # CircuitPython doesn't have typing module
+
+# WRONG - unconditional datetime import
+from datetime import datetime
+
+# CORRECT - fallback to adafruit_datetime
+try:
+    from datetime import datetime
+except ImportError:
+    try:
+        from adafruit_datetime import datetime
+    except ImportError:
+        datetime = None  # Timestamp features disabled
 ```
 
 **See `docs/architecture.md` Section 8 (CircuitPython Compatibility)** for comprehensive patterns and dual-implementation strategy.
@@ -321,12 +378,52 @@ def get_feed_name(logical_name, environment):
 
 ## Testing Strategy
 
-- Unit tests for message parsing/formatting
-- Unit tests for configuration validation
-- Integration tests require hardware (limited automation)
-- Mock cloud backend for offline testing
-- CI runs tests automatically on push/PR via GitHub Actions
-- CircuitPython code tested using [Adafruit Blinka](https://github.com/adafruit/Adafruit_Blinka) compatibility layer
+### Unit Tests (CPython/Blinka)
+
+- Run via pytest: `uv run pytest tests/unit/`
+- 206 tests covering message types, encoding, decoding, validation
+- Uses [Adafruit Blinka](https://github.com/adafruit/Adafruit_Blinka) for CircuitPython API compatibility
+- CI runs automatically on push/PR via GitHub Actions
+
+### On-Device Tests (CircuitPython Hardware)
+
+- Run directly on ESP32 hardware via `/run-device-tests` command
+- 27 tests covering core message functionality
+- Validates actual CircuitPython compatibility (not just Blinka emulation)
+- Uses lightweight test runner (`tests/device/runner.py`)
+
+```bash
+# Deploy and run device tests
+python circuitpython/deploy.py --target test --source --tests
+
+# Monitor test output
+python scripts/serial_monitor.py --reset --timeout 60
+```
+
+Test output format:
+
+```text
+=== TEST RUN START ===
+BOARD: adafruit_feather_esp32s3_4mbflash_2mbpsram
+CIRCUITPYTHON: 9.2.8
+MEMORY_START: 2053840 bytes free
+---
+MODULE: shared.messages
+[PASS] test_water_level_creation (0ms)
+[FAIL] test_example: assertion message
+[ERROR] test_broken: ExceptionType: message
+[SKIP] test_skipped: reason
+---
+=== TEST RUN END ===
+SUMMARY: 27 passed, 0 failed, 0 error, 0 skipped
+```
+
+### Test Coverage
+
+| Test Type | Location | Count | Purpose |
+|-----------|----------|-------|---------|
+| Unit tests | `tests/unit/` | 206 | Full coverage, runs in CI |
+| Device tests | `tests/device/` | 27 | Hardware validation |
 
 ## Sequential Thinking
 

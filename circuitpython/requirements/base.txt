@@ -1,0 +1,18 @@
+# Base CircuitPython libraries - common to all nodes
+# These are installed from the Adafruit CircuitPython Bundle
+
+# Networking and communication
+adafruit_connection_manager
+adafruit_requests
+adafruit_minimqtt
+
+# Adafruit IO client
+adafruit_io
+
+# Time and logging
+adafruit_datetime
+adafruit_logging
+adafruit_ticks
+
+# Status LED (most Feather boards have NeoPixel)
+neopixel

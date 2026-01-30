@@ -9,7 +9,11 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any
+
+try:
+    from typing import Any
+except ImportError:
+    Any = None  # CircuitPython doesn't have typing module
 
 # Try to import datetime (CPython/Blinka), fall back to time module
 try:

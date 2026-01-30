@@ -1,0 +1,6 @@
+# Valve Node CircuitPython libraries
+# Extends base.txt
+
+# Temperature sensor (DS18X20 OneWire)
+adafruit_onewire
+adafruit_ds18x20

@@ -8,15 +8,23 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+
+try:
+    from typing import Any
+except ImportError:
+    Any = None  # CircuitPython doesn't have typing module
 
 from .envelope import ENVELOPE_REQUIRED_FIELDS
 
 # Try to import datetime (CPython/Blinka), fall back to adafruit_datetime
+# If neither available, timestamp validation will be disabled
 try:
     from datetime import datetime
 except ImportError:
-    from adafruit_datetime import datetime  # type: ignore[import-not-found,no-redef]
+    try:
+        from adafruit_datetime import datetime  # type: ignore[import-not-found,no-redef]
+    except ImportError:
+        datetime = None  # type: ignore[misc,assignment]  # Timestamp validation disabled
 
 # Constants for message size validation
 MAX_MESSAGE_SIZE_BYTES = 4096  # 4KB per requirements
@@ -122,8 +130,13 @@ def _parse_iso_timestamp(timestamp: str) -> int | None:
         timestamp: ISO 8601 format timestamp string
 
     Returns:
-        Unix timestamp in seconds, or None if parsing fails
+        Unix timestamp in seconds, or None if parsing fails.
+        Returns None if datetime module is not available.
     """
+    # Guard for CircuitPython without datetime/adafruit_datetime
+    if datetime is None:
+        return None
+
     try:
         # Validate format with regex first (ensures consistent format)
         match = ISO_TIMESTAMP_PATTERN.match(timestamp)

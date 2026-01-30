@@ -8,7 +8,11 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+
+try:
+    from typing import Any
+except ImportError:
+    Any = None  # CircuitPython doesn't have typing module
 
 from .envelope import create_envelope
 
@@ -33,7 +37,8 @@ def snake_to_camel(name: str) -> str:
     result = parts[0]
     for part in parts[1:]:
         if part:  # Skip empty parts from trailing underscores
-            result += part.capitalize()
+            # Manual capitalize for CircuitPython compatibility
+            result += part[0].upper() + part[1:] if part else ""
 
     return result
 
