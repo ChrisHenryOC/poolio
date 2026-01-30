@@ -10,6 +10,14 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from .envelope import ENVELOPE_REQUIRED_FIELDS
+
+# Try to import datetime (CPython/Blinka), fall back to adafruit_datetime
+try:
+    from datetime import datetime
+except ImportError:
+    from adafruit_datetime import datetime  # type: ignore[import-not-found,no-redef]
+
 # Constants for message size validation
 MAX_MESSAGE_SIZE_BYTES = 4096  # 4KB per requirements
 
@@ -20,9 +28,6 @@ MAX_FUTURE_SECONDS = 60  # 1 minute clock skew tolerance
 
 # Message types that use command threshold (5 minutes)
 COMMAND_TYPES = {"command", "command_response", "config_update"}
-
-# Required envelope fields per FR-MSG-002
-ENVELOPE_REQUIRED_FIELDS = ["version", "type", "deviceId", "timestamp", "payload"]
 
 # Required payload fields per message type (camelCase for JSON)
 PAYLOAD_REQUIRED_FIELDS: dict[str, list[str]] = {
@@ -110,83 +115,51 @@ def validate_payload(msg_type: str, payload: dict[str, Any]) -> tuple[bool, list
 def _parse_iso_timestamp(timestamp: str) -> int | None:
     """Parse ISO 8601 timestamp to Unix timestamp (seconds since epoch).
 
+    Uses datetime.fromisoformat() for parsing with additional security
+    validations for pre-epoch timestamps and extreme timezone offsets.
+
     Args:
         timestamp: ISO 8601 format timestamp string
 
     Returns:
         Unix timestamp in seconds, or None if parsing fails
     """
-    match = ISO_TIMESTAMP_PATTERN.match(timestamp)
-    if not match:
-        return None
-
-    year = int(match.group(1))
-    month = int(match.group(2))
-    day = int(match.group(3))
-    hour = int(match.group(4))
-    minute = int(match.group(5))
-    second = int(match.group(6))
-    tz_str = match.group(7)
-
-    # Validate date/time component ranges
-    if not (1970 <= year <= 9999):
-        return None
-    if not (1 <= month <= 12):
-        return None
-    if not (1 <= day <= 31):
-        return None
-    if not (0 <= hour <= 23):
-        return None
-    if not (0 <= minute <= 59):
-        return None
-    if not (0 <= second <= 59):
-        return None
-
-    # Calculate days since epoch (1970-01-01)
-    # Simplified calculation - doesn't account for leap seconds
-    days_in_month = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-
-    # Count leap years from 1970 to year-1
-    def is_leap_year(y: int) -> bool:
-        return y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)
-
-    # Days from 1970 to start of year
-    days = 0
-    for y in range(1970, year):
-        days += 366 if is_leap_year(y) else 365
-
-    # Days in current year up to start of month
-    if is_leap_year(year):
-        days_in_month[2] = 29
-    for m in range(1, month):
-        days += days_in_month[m]
-
-    # Days in current month
-    days += day - 1
-
-    # Convert to seconds
-    unix_time = days * 86400 + hour * 3600 + minute * 60 + second
-
-    # Apply timezone offset
-    if tz_str == "Z":
-        pass  # UTC, no offset
-    else:
-        # Parse offset like -08:00 or +05:30
-        sign = 1 if tz_str[0] == "+" else -1
-        tz_hour = int(tz_str[1:3])
-        tz_min = int(tz_str[4:6])
-        # Validate timezone offset bounds (UTC-12:00 to UTC+14:00)
-        if not (0 <= tz_min <= 59):
+    try:
+        # Validate format with regex first (ensures consistent format)
+        match = ISO_TIMESTAMP_PATTERN.match(timestamp)
+        if not match:
             return None
-        if sign == 1 and tz_hour > 14:
-            return None
-        if sign == -1 and tz_hour > 12:
-            return None
-        offset_seconds = sign * (tz_hour * 3600 + tz_min * 60)
-        # Subtract offset to get UTC
-        unix_time -= offset_seconds
 
-    return unix_time
+        tz_str = match.group(7)
+
+        # Validate timezone offset bounds before parsing
+        if tz_str != "Z":
+            tz_hour = int(tz_str[1:3])
+            tz_min = int(tz_str[4:6])
+            # Reject invalid minutes (must be 0-59)
+            if tz_min >= 60:
+                return None
+            # Reject extreme offsets (UTC-12 to UTC+14)
+            sign = 1 if tz_str[0] == "+" else -1
+            if sign == 1 and tz_hour > 14:
+                return None
+            if sign == -1 and tz_hour > 12:
+                return None
+
+        # Handle Z suffix (Python < 3.11 doesn't support Z in fromisoformat)
+        ts = timestamp
+        if ts.endswith("Z"):
+            ts = ts[:-1] + "+00:00"
+
+        dt = datetime.fromisoformat(ts)
+
+        # Security validation: reject pre-epoch timestamps
+        if dt.year < 1970:
+            return None
+
+        return int(dt.timestamp())
+    except (ValueError, OSError, OverflowError):
+        return None
 
 
 def validate_timestamp_freshness(

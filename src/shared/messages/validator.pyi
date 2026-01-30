@@ -2,12 +2,13 @@
 
 from typing import Any
 
+from .envelope import ENVELOPE_REQUIRED_FIELDS as ENVELOPE_REQUIRED_FIELDS
+
 MAX_MESSAGE_SIZE_BYTES: int
 COMMAND_MAX_AGE_SECONDS: int
 STATUS_MAX_AGE_SECONDS: int
 MAX_FUTURE_SECONDS: int
 COMMAND_TYPES: set[str]
-ENVELOPE_REQUIRED_FIELDS: list[str]
 PAYLOAD_REQUIRED_FIELDS: dict[str, list[str]]
 
 def validate_envelope(envelope: dict[str, Any]) -> tuple[bool, list[str]]: ...
