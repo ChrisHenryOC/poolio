@@ -2,12 +2,14 @@
 # Tests for Issue #12: Message Validation (Simple)
 
 
+# Import private function for direct testing - type: ignore for mypy
 from shared.messages.validator import (
     COMMAND_MAX_AGE_SECONDS,
     COMMAND_TYPES,
     MAX_FUTURE_SECONDS,
     MAX_MESSAGE_SIZE_BYTES,
     STATUS_MAX_AGE_SECONDS,
+    _parse_iso_timestamp,
     validate_envelope,
     validate_message_size,
     validate_payload,
@@ -511,6 +513,67 @@ class TestValidateTimestampFreshness:
         assert len(errors) == 1
         assert "format" in errors[0].lower() or "parse" in errors[0].lower()
 
+    def test_command_exactly_at_5_minute_threshold_is_valid(self) -> None:
+        """Command timestamp exactly 300 seconds old is valid."""
+        # Message timestamp: 2026-01-20T14:30:00-08:00 (exactly 5 minutes before reference)
+        timestamp = "2026-01-20T14:30:00-08:00"
+
+        valid, errors = validate_timestamp_freshness(timestamp, "command", self.REFERENCE_TIME)
+
+        assert valid is True
+        assert errors == []
+
+    def test_command_one_second_past_threshold_is_invalid(self) -> None:
+        """Command timestamp 301 seconds old is invalid."""
+        # Message timestamp: 2026-01-20T14:29:59-08:00 (301 seconds before reference)
+        timestamp = "2026-01-20T14:29:59-08:00"
+
+        valid, errors = validate_timestamp_freshness(timestamp, "command", self.REFERENCE_TIME)
+
+        assert valid is False
+        assert len(errors) == 1
+
+    def test_status_exactly_at_15_minute_threshold_is_valid(self) -> None:
+        """Status timestamp exactly 900 seconds old is valid."""
+        # Message timestamp: 2026-01-20T14:20:00-08:00 (exactly 15 minutes before reference)
+        timestamp = "2026-01-20T14:20:00-08:00"
+
+        valid, errors = validate_timestamp_freshness(timestamp, "pool_status", self.REFERENCE_TIME)
+
+        assert valid is True
+        assert errors == []
+
+    def test_status_one_second_past_threshold_is_invalid(self) -> None:
+        """Status timestamp 901 seconds old is invalid."""
+        # Message timestamp: 2026-01-20T14:19:59-08:00 (901 seconds before reference)
+        timestamp = "2026-01-20T14:19:59-08:00"
+
+        valid, errors = validate_timestamp_freshness(timestamp, "pool_status", self.REFERENCE_TIME)
+
+        assert valid is False
+        assert len(errors) == 1
+
+    def test_future_exactly_at_60_second_threshold_is_valid(self) -> None:
+        """Timestamp exactly 60 seconds in future is valid (clock skew tolerance)."""
+        # Message timestamp: 2026-01-20T14:36:00-08:00 (exactly 60 seconds after reference)
+        timestamp = "2026-01-20T14:36:00-08:00"
+
+        valid, errors = validate_timestamp_freshness(timestamp, "command", self.REFERENCE_TIME)
+
+        assert valid is True
+        assert errors == []
+
+    def test_future_one_second_past_threshold_is_invalid(self) -> None:
+        """Timestamp 61 seconds in future is invalid."""
+        # Message timestamp: 2026-01-20T14:36:01-08:00 (61 seconds after reference)
+        timestamp = "2026-01-20T14:36:01-08:00"
+
+        valid, errors = validate_timestamp_freshness(timestamp, "command", self.REFERENCE_TIME)
+
+        assert valid is False
+        assert len(errors) == 1
+        assert "future" in errors[0].lower()
+
 
 class TestConstants:
     """Tests for validation constants."""
@@ -542,3 +605,111 @@ class TestConstants:
     def test_command_types_includes_config_update(self) -> None:
         """COMMAND_TYPES includes 'config_update'."""
         assert "config_update" in COMMAND_TYPES
+
+
+class TestParseIsoTimestamp:
+    """Tests for _parse_iso_timestamp function."""
+
+    def test_valid_timestamp_with_negative_offset(self) -> None:
+        """Valid timestamp with negative timezone offset is parsed correctly."""
+        # 2026-01-20T14:30:00-08:00 = 2026-01-20T22:30:00Z
+        result = _parse_iso_timestamp("2026-01-20T14:30:00-08:00")
+
+        assert result is not None
+        # Verify it's a reasonable Unix timestamp for 2026
+        assert 1700000000 < result < 1800000000
+
+    def test_valid_timestamp_with_utc_z_suffix(self) -> None:
+        """Valid timestamp with Z suffix (UTC) is parsed correctly."""
+        result = _parse_iso_timestamp("2026-01-20T22:30:00Z")
+
+        assert result is not None
+        # Should produce same result as -08:00 offset version
+        result_with_offset = _parse_iso_timestamp("2026-01-20T14:30:00-08:00")
+        assert result == result_with_offset
+
+    def test_valid_timestamp_with_positive_offset(self) -> None:
+        """Valid timestamp with positive timezone offset is parsed correctly."""
+        # 2026-01-20T03:00:00+05:30 (India) = 2026-01-19T21:30:00Z
+        result = _parse_iso_timestamp("2026-01-20T03:00:00+05:30")
+
+        assert result is not None
+        # Verify it's a reasonable Unix timestamp for 2026
+        assert 1700000000 < result < 1800000000
+
+    def test_leap_year_feb_29(self) -> None:
+        """Leap year February 29 is handled correctly."""
+        # 2024 is a leap year
+        result = _parse_iso_timestamp("2024-02-29T12:00:00Z")
+
+        assert result is not None
+
+    def test_invalid_format_returns_none(self) -> None:
+        """Invalid timestamp format returns None."""
+        assert _parse_iso_timestamp("not-a-timestamp") is None
+        assert _parse_iso_timestamp("2026-01-20") is None
+        assert _parse_iso_timestamp("2026-01-20T14:30:00") is None  # Missing timezone
+
+    def test_invalid_month_returns_none(self) -> None:
+        """Month outside 1-12 range returns None."""
+        assert _parse_iso_timestamp("2026-13-20T14:30:00Z") is None
+        assert _parse_iso_timestamp("2026-00-20T14:30:00Z") is None
+
+    def test_invalid_day_returns_none(self) -> None:
+        """Day outside 1-31 range returns None."""
+        assert _parse_iso_timestamp("2026-01-32T14:30:00Z") is None
+        assert _parse_iso_timestamp("2026-01-00T14:30:00Z") is None
+
+    def test_invalid_hour_returns_none(self) -> None:
+        """Hour outside 0-23 range returns None."""
+        assert _parse_iso_timestamp("2026-01-20T24:30:00Z") is None
+
+    def test_invalid_minute_returns_none(self) -> None:
+        """Minute outside 0-59 range returns None."""
+        assert _parse_iso_timestamp("2026-01-20T14:60:00Z") is None
+
+    def test_invalid_second_returns_none(self) -> None:
+        """Second outside 0-59 range returns None."""
+        assert _parse_iso_timestamp("2026-01-20T14:30:60Z") is None
+
+    def test_invalid_timezone_offset_too_positive(self) -> None:
+        """Timezone offset exceeding +14:00 returns None."""
+        assert _parse_iso_timestamp("2026-01-20T14:30:00+15:00") is None
+
+    def test_invalid_timezone_offset_too_negative(self) -> None:
+        """Timezone offset exceeding -12:00 returns None."""
+        assert _parse_iso_timestamp("2026-01-20T14:30:00-13:00") is None
+
+    def test_invalid_timezone_minute_returns_none(self) -> None:
+        """Timezone offset with invalid minutes returns None."""
+        assert _parse_iso_timestamp("2026-01-20T14:30:00+05:60") is None
+
+    def test_year_before_epoch_returns_none(self) -> None:
+        """Year before Unix epoch (1970) returns None."""
+        assert _parse_iso_timestamp("1969-01-20T14:30:00Z") is None
+
+
+class TestTimezoneFormats:
+    """Tests for different timezone format handling in timestamp validation."""
+
+    REFERENCE_TIME = 1768948500  # 2026-01-20T22:35:00Z
+
+    def test_utc_z_suffix_validation(self) -> None:
+        """Timestamp with Z suffix validates correctly."""
+        # 2026-01-20T22:32:00Z (3 minutes before reference in UTC)
+        timestamp = "2026-01-20T22:32:00Z"
+
+        valid, errors = validate_timestamp_freshness(timestamp, "command", self.REFERENCE_TIME)
+
+        assert valid is True
+        assert errors == []
+
+    def test_positive_offset_validation(self) -> None:
+        """Timestamp with positive offset validates correctly."""
+        # 2026-01-21T04:02:00+05:30 = 2026-01-20T22:32:00Z (3 minutes before reference)
+        timestamp = "2026-01-21T04:02:00+05:30"
+
+        valid, errors = validate_timestamp_freshness(timestamp, "command", self.REFERENCE_TIME)
+
+        assert valid is True
+        assert errors == []

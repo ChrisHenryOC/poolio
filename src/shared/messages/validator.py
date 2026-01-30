@@ -101,7 +101,6 @@ def validate_payload(msg_type: str, payload: dict[str, Any]) -> tuple[bool, list
     errors = []
 
     for field in required_fields:
-        # For error.context, allow None value but field must be present
         if field not in payload:
             errors.append(f"Payload missing required field '{field}' for {msg_type}")
 
@@ -128,6 +127,20 @@ def _parse_iso_timestamp(timestamp: str) -> int | None:
     minute = int(match.group(5))
     second = int(match.group(6))
     tz_str = match.group(7)
+
+    # Validate date/time component ranges
+    if not (1970 <= year <= 9999):
+        return None
+    if not (1 <= month <= 12):
+        return None
+    if not (1 <= day <= 31):
+        return None
+    if not (0 <= hour <= 23):
+        return None
+    if not (0 <= minute <= 59):
+        return None
+    if not (0 <= second <= 59):
+        return None
 
     # Calculate days since epoch (1970-01-01)
     # Simplified calculation - doesn't account for leap seconds
@@ -162,6 +175,13 @@ def _parse_iso_timestamp(timestamp: str) -> int | None:
         sign = 1 if tz_str[0] == "+" else -1
         tz_hour = int(tz_str[1:3])
         tz_min = int(tz_str[4:6])
+        # Validate timezone offset bounds (UTC-12:00 to UTC+14:00)
+        if not (0 <= tz_min <= 59):
+            return None
+        if sign == 1 and tz_hour > 14:
+            return None
+        if sign == -1 and tz_hour > 12:
+            return None
         offset_seconds = sign * (tz_hour * 3600 + tz_min * 60)
         # Subtract offset to get UTC
         unix_time -= offset_seconds
