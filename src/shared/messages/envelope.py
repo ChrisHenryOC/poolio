@@ -21,6 +21,9 @@ except ImportError:
 # Protocol version per FR-MSG-001
 PROTOCOL_VERSION = 2
 
+# Required envelope fields per FR-MSG-002
+ENVELOPE_REQUIRED_FIELDS = ["version", "type", "deviceId", "timestamp", "payload"]
+
 # Device ID validation pattern per FR-MSG-002
 # Lowercase letters, numbers, hyphens only, 1-64 characters
 DEVICE_ID_PATTERN = re.compile(r"^[a-z0-9-]+$")
@@ -117,8 +120,7 @@ def parse_envelope(json_str: str) -> tuple[dict[str, Any], dict[str, Any]]:
         raise ValueError(f"Invalid JSON: {e}") from e
 
     # Check required fields per FR-MSG-002
-    required_fields = ["version", "type", "deviceId", "timestamp", "payload"]
-    for field in required_fields:
+    for field in ENVELOPE_REQUIRED_FIELDS:
         if field not in data:
             raise ValueError(f"Envelope missing required field: {field}")
 
