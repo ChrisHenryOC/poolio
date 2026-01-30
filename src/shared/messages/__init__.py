@@ -32,6 +32,17 @@ from .types import (
     # Base types
     WaterLevel,
 )
+from .validator import (
+    COMMAND_MAX_AGE_SECONDS,
+    COMMAND_TYPES,
+    MAX_FUTURE_SECONDS,
+    MAX_MESSAGE_SIZE_BYTES,
+    STATUS_MAX_AGE_SECONDS,
+    validate_envelope,
+    validate_message_size,
+    validate_payload,
+    validate_timestamp_freshness,
+)
 
 __all__ = [
     # Envelope functions
@@ -39,6 +50,17 @@ __all__ = [
     "create_envelope",
     "parse_envelope",
     "validate_device_id",
+    # Validation functions
+    "validate_envelope",
+    "validate_message_size",
+    "validate_payload",
+    "validate_timestamp_freshness",
+    # Validation constants
+    "MAX_MESSAGE_SIZE_BYTES",
+    "COMMAND_MAX_AGE_SECONDS",
+    "STATUS_MAX_AGE_SECONDS",
+    "MAX_FUTURE_SECONDS",
+    "COMMAND_TYPES",
     # Encoder/decoder functions
     "encode_message",
     "decode_message",
