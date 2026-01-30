@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import re
+
 try:
     from typing import Any
 except ImportError:

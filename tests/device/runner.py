@@ -7,7 +7,7 @@ serial output for monitoring by Claude Code or other tools.
 Usage on device:
     import tests.device.runner as runner
     runner.run_all()  # Run all discovered tests
-    runner.run_module("shared.test_messages")  # Run specific module
+    runner.run_module_by_name("shared.test_messages")  # Run specific module
     runner.run_pattern("temperature")  # Run tests matching pattern
 """
 
@@ -50,15 +50,14 @@ class TestRunner:
 
         try:
             import board
+
             board_name = board.board_id
         except (ImportError, AttributeError):
             pass
 
         try:
             cp_version = sys.implementation.version
-            cp_version = "{}.{}.{}".format(
-                cp_version[0], cp_version[1], cp_version[2]
-            )
+            cp_version = f"{cp_version[0]}.{cp_version[1]}.{cp_version[2]}"
         except (AttributeError, IndexError):
             pass
 
@@ -127,8 +126,22 @@ class TestRunner:
 
         except Exception as e:
             duration_ms = int((time.monotonic() - start) * 1000)
-            error_msg = "{}: {}".format(type(e).__name__, str(e))
+            error_msg = f"{type(e).__name__}: {str(e)}"
             return TestResult(name, ERROR, duration_ms, error_msg)
+
+    def _print_result(self, name, result):
+        """Print a single test result.
+
+        Args:
+            name: Test function name
+            result: TestResult instance
+        """
+        if result.status == PASS:
+            print(f"[{PASS}] {name} ({result.duration_ms}ms)")
+        elif result.status == SKIP:
+            print(f"[{SKIP}] {name}: {result.message}")
+        else:
+            print(f"[{result.status}] {name}: {result.message}")
 
     def run_module(self, module, module_name=None):
         """Run all tests in a module.
@@ -145,7 +158,7 @@ class TestRunner:
             return
 
         print("---")
-        print("MODULE: {}".format(module_name))
+        print(f"MODULE: {module_name}")
 
         for name, test_func in tests:
             # Collect garbage before each test for consistent memory
@@ -153,14 +166,7 @@ class TestRunner:
 
             result = self._run_single_test(name, test_func)
             self.results.append(result)
-
-            # Print result
-            if result.status == PASS:
-                print("[{}] {} ({}ms)".format(PASS, name, result.duration_ms))
-            elif result.status == SKIP:
-                print("[{}] {}: {}".format(SKIP, name, result.message))
-            else:
-                print("[{}] {}: {}".format(result.status, name, result.message))
+            self._print_result(name, result)
 
     def run_modules(self, modules):
         """Run tests from multiple modules.
@@ -178,9 +184,9 @@ class TestRunner:
         self.start_time = time.monotonic()
 
         print("=== TEST RUN START ===")
-        print("BOARD: {}".format(board_name))
-        print("CIRCUITPYTHON: {}".format(cp_version))
-        print("MEMORY_START: {} bytes free".format(self.memory_start))
+        print(f"BOARD: {board_name}")
+        print(f"CIRCUITPYTHON: {cp_version}")
+        print(f"MEMORY_START: {self.memory_start} bytes free")
 
     def print_summary(self):
         """Print test run summary."""
@@ -196,16 +202,16 @@ class TestRunner:
 
         print("---")
         print("=== TEST RUN END ===")
-        print("SUMMARY: {} passed, {} failed, {} error, {} skipped".format(
-            passed, failed, errors, skipped
-        ))
-        print("DURATION: {:.1f} seconds".format(duration))
-        print("MEMORY_END: {} bytes free".format(self.memory_end))
+        print(
+            f"SUMMARY: {passed} passed, {failed} failed, {errors} error, {skipped} skipped"
+        )
+        print(f"DURATION: {duration:.1f} seconds")
+        print(f"MEMORY_END: {self.memory_end} bytes free")
 
         if memory_delta < 0:
-            print("MEMORY_DELTA: {} bytes (potential leak)".format(memory_delta))
+            print(f"MEMORY_DELTA: {memory_delta} bytes (potential leak)")
         else:
-            print("MEMORY_DELTA: +{} bytes".format(memory_delta))
+            print(f"MEMORY_DELTA: +{memory_delta} bytes")
 
     def get_exit_code(self):
         """Get exit code based on results (0=success, 1=failure)."""
@@ -217,25 +223,35 @@ class TestRunner:
 
 # Convenience functions for common use cases
 
-def run_all():
-    """Run all discovered device tests.
 
-    This function imports and runs tests from known test modules.
-    Add new test modules here as they are created.
+def _get_test_modules():
+    """Import all known test modules.
+
+    Returns:
+        List of (module_object, module_name) tuples.
+        Add new test modules here as they are created.
     """
-    runner = TestRunner()
-    runner.print_header()
-
-    # Import and run test modules
-    # Add new modules here as they are created
     modules = []
 
     try:
         from .shared import test_messages
+
         modules.append((test_messages, "shared.messages"))
-    except ImportError as e:
-        print("---")
-        print("WARNING: Could not import shared.test_messages: {}".format(e))
+    except ImportError:
+        pass
+
+    return modules
+
+
+def run_all():
+    """Run all discovered device tests.
+
+    This function imports and runs tests from known test modules.
+    """
+    runner = TestRunner()
+    runner.print_header()
+
+    modules = _get_test_modules()
 
     if modules:
         runner.run_modules(modules)
@@ -266,7 +282,7 @@ def run_module_by_name(module_name):
         runner.run_module(module, module_name)
     except ImportError as e:
         print("---")
-        print("ERROR: Could not import {}: {}".format(module_name, e))
+        print(f"ERROR: Could not import {module_name}: {e}")
 
     runner.print_summary()
     return runner.get_exit_code()
@@ -284,14 +300,7 @@ def run_pattern(pattern):
     runner = TestRunner()
     runner.print_header()
 
-    # Import all known test modules
-    modules = []
-
-    try:
-        from .shared import test_messages
-        modules.append((test_messages, "shared.messages"))
-    except ImportError:
-        pass
+    modules = _get_test_modules()
 
     # Filter and run matching tests
     for module, module_name in modules:
@@ -300,23 +309,17 @@ def run_pattern(pattern):
 
         if matching:
             print("---")
-            print("MODULE: {} (filtered)".format(module_name))
+            print(f"MODULE: {module_name} (filtered)")
 
             for name, test_func in matching:
                 runner._collect_garbage()
                 result = runner._run_single_test(name, test_func)
                 runner.results.append(result)
-
-                if result.status == PASS:
-                    print("[{}] {} ({}ms)".format(PASS, name, result.duration_ms))
-                elif result.status == SKIP:
-                    print("[{}] {}: {}".format(SKIP, name, result.message))
-                else:
-                    print("[{}] {}: {}".format(result.status, name, result.message))
+                runner._print_result(name, result)
 
     if not runner.results:
         print("---")
-        print("WARNING: No tests matched pattern '{}'".format(pattern))
+        print(f"WARNING: No tests matched pattern '{pattern}'")
 
     runner.print_summary()
     return runner.get_exit_code()

@@ -21,7 +21,7 @@ def find_serial_port():
     """Auto-detect CircuitPython serial port."""
     patterns = [
         "/dev/cu.usbmodem*",  # macOS
-        "/dev/ttyACM*",       # Linux
+        "/dev/ttyACM*",  # Linux
     ]
     for pattern in patterns:
         ports = glob.glob(pattern)
@@ -44,7 +44,7 @@ def monitor_serial(port, timeout_seconds=60, reset=False):
 
     if reset:
         print("Sending Ctrl+D to reset...")
-        ser.write(b'\x04')
+        ser.write(b"\x04")
         time.sleep(0.5)
 
     print("Monitoring serial output...")
@@ -55,19 +55,19 @@ def monitor_serial(port, timeout_seconds=60, reset=False):
 
     while time.time() < end_time:
         if ser.in_waiting:
-            line = ser.readline().decode('utf-8', errors='replace').strip()
+            line = ser.readline().decode("utf-8", errors="replace").strip()
             if line:
                 # Filter out terminal escape sequences
-                if not line.startswith(']0;'):
+                if not line.startswith("]0;"):
                     print(line)
-                if '=== TEST RUN END ===' in line:
+                if "=== TEST RUN END ===" in line:
                     test_complete = True
                     # Collect remaining summary lines
                     for _ in range(10):
                         time.sleep(0.1)
                         if ser.in_waiting:
-                            line = ser.readline().decode('utf-8', errors='replace').strip()
-                            if line and not line.startswith(']0;'):
+                            line = ser.readline().decode("utf-8", errors="replace").strip()
+                            if line and not line.startswith("]0;"):
                                 print(line)
                     break
         time.sleep(0.05)
@@ -86,8 +86,12 @@ def monitor_serial(port, timeout_seconds=60, reset=False):
 def main():
     parser = argparse.ArgumentParser(description="Monitor CircuitPython serial output")
     parser.add_argument("--port", "-p", help="Serial port (auto-detected if not specified)")
-    parser.add_argument("--timeout", "-t", type=int, default=60, help="Timeout in seconds (default: 60)")
-    parser.add_argument("--reset", "-r", action="store_true", help="Send Ctrl+D to reset board first")
+    parser.add_argument(
+        "--timeout", "-t", type=int, default=60, help="Timeout in seconds (default: 60)"
+    )
+    parser.add_argument(
+        "--reset", "-r", action="store_true", help="Send Ctrl+D to reset board first"
+    )
 
     args = parser.parse_args()
 

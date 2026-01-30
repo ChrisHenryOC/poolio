@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+
 try:
     from typing import Any
 except ImportError:

@@ -7,19 +7,18 @@ They test message types, encoding, decoding, envelope, and validation.
 
 import json
 
-from tests.device.assertions import (
-    assert_equal,
-    assert_in,
-    assert_is_not_none,
-    assert_raises,
-    assert_true,
-    skip,
+from shared.messages.decoder import camel_to_snake, decode_message
+from shared.messages.encoder import encode_message, snake_to_camel
+from shared.messages.envelope import (
+    PROTOCOL_VERSION,
+    create_envelope,
+    parse_envelope,
+    validate_device_id,
 )
 
 # Import the modules under test
 from shared.messages.types import (
     Battery,
-    Command,
     Humidity,
     PoolStatus,
     ScheduleInfo,
@@ -28,13 +27,10 @@ from shared.messages.types import (
     ValveStatus,
     WaterLevel,
 )
-from shared.messages.encoder import encode_message, snake_to_camel
-from shared.messages.decoder import decode_message, camel_to_snake
-from shared.messages.envelope import (
-    PROTOCOL_VERSION,
-    create_envelope,
-    parse_envelope,
-    validate_device_id,
+from tests.device.assertions import (
+    assert_equal,
+    assert_in,
+    assert_raises,
 )
 
 # Test timestamp for CircuitPython (which lacks datetime auto-generation)
@@ -279,9 +275,7 @@ def test_create_envelope_basic():
     """create_envelope returns dict with all required fields."""
     payload = {"waterLevel": {"floatSwitch": True, "confidence": 0.95}}
 
-    envelope = create_envelope(
-        "pool_status", "pool-node-001", payload, timestamp=TEST_TIMESTAMP
-    )
+    envelope = create_envelope("pool_status", "pool-node-001", payload, timestamp=TEST_TIMESTAMP)
 
     assert_equal(envelope["version"], PROTOCOL_VERSION)
     assert_equal(envelope["type"], "pool_status")

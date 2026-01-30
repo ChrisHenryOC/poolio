@@ -25,9 +25,7 @@ def assert_equal(actual, expected, msg=None):
     if actual != expected:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError(
-            "assert_equal failed: {} != {}".format(repr(actual), repr(expected))
-        )
+        raise AssertionError(f"assert_equal failed: {repr(actual)} != {repr(expected)}")
 
 
 def assert_not_equal(actual, expected, msg=None):
@@ -42,7 +40,7 @@ def assert_not_equal(actual, expected, msg=None):
         if msg:
             raise AssertionError(msg)
         raise AssertionError(
-            "assert_not_equal failed: {} == {}".format(repr(actual), repr(expected))
+            f"assert_not_equal failed: {repr(actual)} == {repr(expected)}"
         )
 
 
@@ -56,7 +54,7 @@ def assert_true(value, msg=None):
     if not value:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError("assert_true failed: {} is not truthy".format(repr(value)))
+        raise AssertionError(f"assert_true failed: {repr(value)} is not truthy")
 
 
 def assert_false(value, msg=None):
@@ -69,7 +67,7 @@ def assert_false(value, msg=None):
     if value:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError("assert_false failed: {} is not falsy".format(repr(value)))
+        raise AssertionError(f"assert_false failed: {repr(value)} is not falsy")
 
 
 def assert_is_none(value, msg=None):
@@ -82,9 +80,7 @@ def assert_is_none(value, msg=None):
     if value is not None:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError(
-            "assert_is_none failed: {} is not None".format(repr(value))
-        )
+        raise AssertionError(f"assert_is_none failed: {repr(value)} is not None")
 
 
 def assert_is_not_none(value, msg=None):
@@ -118,14 +114,10 @@ def assert_raises(exception_type, callable_obj, *args, **kwargs):
         return e
     except Exception as e:
         raise AssertionError(
-            "assert_raises failed: expected {}, got {}".format(
-                exception_type.__name__, type(e).__name__
-            )
-        )
+            f"assert_raises failed: expected {exception_type.__name__}, got {type(e).__name__}"
+        ) from None
     else:
-        raise AssertionError(
-            "assert_raises failed: {} not raised".format(exception_type.__name__)
-        )
+        raise AssertionError(f"assert_raises failed: {exception_type.__name__} not raised")
 
 
 def assert_almost_equal(actual, expected, places=7, msg=None):
@@ -143,9 +135,7 @@ def assert_almost_equal(actual, expected, places=7, msg=None):
         if msg:
             raise AssertionError(msg)
         raise AssertionError(
-            "assert_almost_equal failed: {} != {} within {} places (diff={})".format(
-                actual, expected, places, diff
-            )
+            f"assert_almost_equal failed: {actual} != {expected} within {places} places (diff={diff})"
         )
 
 
@@ -160,9 +150,7 @@ def assert_in(item, container, msg=None):
     if item not in container:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError(
-            "assert_in failed: {} not in {}".format(repr(item), repr(container))
-        )
+        raise AssertionError(f"assert_in failed: {repr(item)} not in {repr(container)}")
 
 
 def assert_not_in(item, container, msg=None):
@@ -177,7 +165,7 @@ def assert_not_in(item, container, msg=None):
         if msg:
             raise AssertionError(msg)
         raise AssertionError(
-            "assert_not_in failed: {} found in {}".format(repr(item), repr(container))
+            f"assert_not_in failed: {repr(item)} found in {repr(container)}"
         )
 
 
@@ -193,9 +181,7 @@ def assert_is_instance(obj, class_or_tuple, msg=None):
         if msg:
             raise AssertionError(msg)
         raise AssertionError(
-            "assert_is_instance failed: {} is not instance of {}".format(
-                type(obj).__name__, class_or_tuple
-            )
+            f"assert_is_instance failed: {type(obj).__name__} is not instance of {class_or_tuple}"
         )
 
 
@@ -211,7 +197,7 @@ def assert_greater(a, b, msg=None):
         if msg:
             raise AssertionError(msg)
         raise AssertionError(
-            "assert_greater failed: {} is not greater than {}".format(repr(a), repr(b))
+            f"assert_greater failed: {repr(a)} is not greater than {repr(b)}"
         )
 
 
@@ -226,9 +212,7 @@ def assert_less(a, b, msg=None):
     if not a < b:
         if msg:
             raise AssertionError(msg)
-        raise AssertionError(
-            "assert_less failed: {} is not less than {}".format(repr(a), repr(b))
-        )
+        raise AssertionError(f"assert_less failed: {repr(a)} is not less than {repr(b)}")
 
 
 def skip(reason):

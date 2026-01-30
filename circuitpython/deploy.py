@@ -18,6 +18,7 @@ import glob
 import os
 import shutil
 import sys
+import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -78,7 +79,7 @@ def download_bundle(bundle_dir):
     print(f"Downloading bundle from {url}...")
     try:
         urllib.request.urlretrieve(url, zip_path)
-    except Exception as e:
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
         print(f"ERROR: Failed to download bundle: {e}")
         print(f"\nYou can manually download from:\n  {url}")
         print(f"\nAnd extract to:\n  {bundle_dir}")
@@ -86,6 +87,12 @@ def download_bundle(bundle_dir):
 
     print(f"Extracting to {bundle_dir}...")
     with zipfile.ZipFile(zip_path, "r") as zf:
+        # Validate each member path before extraction to prevent path traversal
+        bundle_dir_resolved = bundle_dir.resolve()
+        for member in zf.namelist():
+            member_path = (bundle_dir / member).resolve()
+            if not str(member_path).startswith(str(bundle_dir_resolved)):
+                raise ValueError(f"Zip member escapes target directory: {member}")
         zf.extractall(bundle_dir)
 
     # Clean up zip file
@@ -194,7 +201,7 @@ def deploy_source(device_path, include_tests=False):
     shared_dest = device_lib_dir / "shared"
 
     if shared_src.exists():
-        print(f"\nDeploying source code...")
+        print("\nDeploying source code...")
         if shared_dest.exists():
             shutil.rmtree(shared_dest)
         shutil.copytree(
@@ -202,7 +209,7 @@ def deploy_source(device_path, include_tests=False):
             shared_dest,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyi"),
         )
-        print(f"  Copied: shared/")
+        print("  Copied: shared/")
 
     # Deploy tests if requested
     if include_tests:
@@ -218,7 +225,7 @@ def deploy_source(device_path, include_tests=False):
                 tests_dest,
                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
             )
-            print(f"  Copied: tests/device/")
+            print("  Copied: tests/device/")
 
 
 def list_targets():
@@ -244,19 +251,23 @@ Examples:
     )
 
     parser.add_argument(
-        "--target", "-t",
+        "--target",
+        "-t",
         help="Deployment target (pool-node, valve-node, display-node, test)",
     )
     parser.add_argument(
-        "--device", "-d",
+        "--device",
+        "-d",
         help="Device mount path (default: auto-detect CIRCUITPY)",
     )
     parser.add_argument(
-        "--bundle", "-b",
+        "--bundle",
+        "-b",
         help=f"Bundle directory (default: {BUNDLE_DIR})",
     )
     parser.add_argument(
-        "--source", "-s",
+        "--source",
+        "-s",
         action="store_true",
         help="Also deploy project source code (src/shared/)",
     )
@@ -266,7 +277,8 @@ Examples:
         help="Also deploy device tests (tests/device/)",
     )
     parser.add_argument(
-        "--list-targets", "-l",
+        "--list-targets",
+        "-l",
         action="store_true",
         help="List available deployment targets",
     )
