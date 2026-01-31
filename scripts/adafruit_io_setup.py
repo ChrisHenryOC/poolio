@@ -19,7 +19,7 @@ import os
 import sys
 
 try:
-    from Adafruit_IO import Client, RequestError
+    from Adafruit_IO import Client, Feed, Group, RequestError
 except ImportError:
     print("ERROR: Adafruit_IO library not installed.")
     print("Install with: pip install adafruit-io")
@@ -61,7 +61,17 @@ def create_group(client: Client, group_name: str, description: str) -> bool:
         pass
 
     try:
-        client.create_group({"name": group_name, "description": description})
+        group = Group(
+            name=group_name,
+            description=description,
+            source_keys=None,
+            id=None,
+            source=None,
+            key=None,
+            feeds=None,
+            properties=None,
+        )
+        client.create_group(group)
         print(f"  Created group '{group_name}'")
         return True
     except RequestError as e:
@@ -81,10 +91,20 @@ def create_feed(client: Client, group_key: str, name: str, description: str) -> 
         pass
 
     try:
-        client.create_feed(
-            {"name": name, "description": description},
-            group_key=group_key,
+        feed = Feed(
+            name=name,
+            description=description,
+            key=None,
+            id=None,
+            unit_type=None,
+            unit_symbol=None,
+            history=None,
+            visibility=None,
+            license=None,
+            status_notify=None,
+            status_timeout=None,
         )
+        client.create_feed(feed, group_key=group_key)
         print(f"  Created feed '{feed_key}'")
         return True
     except RequestError as e:

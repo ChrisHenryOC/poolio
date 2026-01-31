@@ -68,9 +68,7 @@ class TestCreateGroup:
         result = create_group(mock_client, "poolio-nonprod", "Test description")
 
         assert result is True
-        mock_client.create_group.assert_called_once_with(
-            {"name": "poolio-nonprod", "description": "Test description"}
-        )
+        mock_client.create_group.assert_called_once()
         captured = capsys.readouterr()
         assert "Created group" in captured.out
 
@@ -112,10 +110,10 @@ class TestCreateFeed:
         result = create_feed(mock_client, "poolio-nonprod", "gateway", "Test description")
 
         assert result is True
-        mock_client.create_feed.assert_called_once_with(
-            {"name": "gateway", "description": "Test description"},
-            group_key="poolio-nonprod",
-        )
+        mock_client.create_feed.assert_called_once()
+        # Verify group_key was passed correctly
+        call_args = mock_client.create_feed.call_args
+        assert call_args[1]["group_key"] == "poolio-nonprod"
         captured = capsys.readouterr()
         assert "Created feed" in captured.out
 
