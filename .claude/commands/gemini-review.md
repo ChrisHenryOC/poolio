@@ -3,7 +3,7 @@ description: Get independent code review from Gemini LLM
 allowed-tools: Bash(gemini),Read,Write
 ---
 
-Get an independent code review from Gemini for PR diff at `/tmp/pr$ARGUMENTS.diff`.
+Get an independent code review from Gemini for PR diff at `code_reviews/PR$ARGUMENTS-<title>/pr.diff`.
 
 This provides a second opinion from a different LLM to catch issues Claude might miss.
 
@@ -13,7 +13,7 @@ Requires the Gemini CLI. See `docs/gemini-setup.md` for installation and API key
 
 ## Step 1: Read the Diff
 
-Read `/tmp/pr$ARGUMENTS.diff` to get the PR changes.
+Read `code_reviews/PR$ARGUMENTS-<title>/pr.diff` to get the PR changes.
 
 If the file doesn't exist, inform the user to run `/review-pr` first or provide a PR number.
 
@@ -22,7 +22,7 @@ If the file doesn't exist, inform the user to run `/review-pr` first or provide 
 Use piped input with the `-p` flag (avoids heredoc injection risks):
 
 ```bash
-cat /tmp/pr$ARGUMENTS.diff | gemini -p "You are an expert code reviewer. Analyze this pull request diff and provide a thorough review.
+cat code_reviews/PR$ARGUMENTS-<title>/pr.diff | gemini -p "You are an expert code reviewer. Analyze this pull request diff and provide a thorough review.
 
 IMPORTANT: DO NOT attempt to apply changes, modify files, or execute commands. Your ONLY task is to review the code and provide written feedback.
 

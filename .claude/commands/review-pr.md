@@ -9,8 +9,8 @@ Review PR $ARGUMENTS (auto-detect from current branch if empty).
 
 ```bash
 gh pr view $ARGUMENTS --json title,number -q '.number + " " + .title'
-gh pr diff $ARGUMENTS > /tmp/pr$ARGUMENTS.diff
-mkdir -p code_reviews/PR$ARGUMENTS-<sanitized-title>
+mkdir -p code_reviews/PR$ARGUMENTS-<title>
+gh pr diff $ARGUMENTS > code_reviews/PR$ARGUMENTS-<title>/pr.diff
 ```
 
 Directory name: PR number + lowercase title with non-alphanumeric replaced by hyphens.
@@ -26,7 +26,7 @@ Launch in parallel (all 6 agents in a single message with multiple Task tool cal
 - security-code-reviewer
 - gemini-reviewer (optional - agent exits gracefully if Gemini unavailable)
 
-Each agent reads `/tmp/pr$ARGUMENTS.diff` and saves findings to `code_reviews/PR$ARGUMENTS-<title>/{agent}.md`.
+Each agent reads `code_reviews/PR$ARGUMENTS-<title>/pr.diff` and saves findings to `code_reviews/PR$ARGUMENTS-<title>/{agent}.md`.
 
 ## Step 3: Consolidate with Sequential Thinking
 
@@ -125,7 +125,7 @@ git push origin <branch>
 
 Each agent:
 
-1. Read `/tmp/pr$ARGUMENTS.diff` first
+1. Read `code_reviews/PR$ARGUMENTS-<title>/pr.diff` first
 2. Apply Kent Beck's principles from `.claude/references/kent-beck-principles.md`
 3. Save findings to `code_reviews/PR$ARGUMENTS-<title>/{agent-name}.md` with:
    - Summary (2-3 sentences)

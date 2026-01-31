@@ -8,9 +8,16 @@ Fix high and medium severity issues from code review for PR $ARGUMENTS.
 ## SETUP
 
 ```bash
-gh pr diff $ARGUMENTS > /tmp/pr$ARGUMENTS.diff
+# Get review directory and verify diff exists
 ls -d code_reviews/PR$ARGUMENTS-* 2>/dev/null | head -1
+# Verify the diff file exists (run /review-pr first if not)
+test -f code_reviews/PR$ARGUMENTS-*/pr.diff || echo "ERROR: Diff not found. Run /review-pr $ARGUMENTS first."
+# Verify we're on the correct branch
+gh pr view $ARGUMENTS --json headRefName -q '.headRefName'
+git fetch origin <branch> && git checkout <branch>
 ```
+
+The diff is already saved at `code_reviews/PR$ARGUMENTS-<title>/pr.diff` from `/review-pr`. If the diff file doesn't exist, run `/review-pr $ARGUMENTS` first.
 
 Check for @claude comments:
 
@@ -90,20 +97,11 @@ For each issue (Critical > High > Medium):
 
 **Do NOT "make it fast"** - performance optimization is out of scope for fix-review.
 
-### When Stuck on a Fix
-
-**Use Sequential Thinking** to diagnose:
-
-- What did you expect vs. what happened?
-- Set `isRevision: true` to reconsider the approach
-- Use `branchFromThought` to explore alternatives
-- Continue until a clear fix path emerges
-
 ## VALIDATE AND COMMIT
 
 ```bash
 uv run ruff format --check src/ tests/ && uv run ruff check src/ tests/ && uv run mypy src/ tests/ && uv run pytest tests/unit/ -x -q
-git add -A && git commit -m "fix: Address review findings" && git push
+git add -u && git commit -m "fix: Address review findings for PR #$ARGUMENTS" && git push
 ```
 
 ## HANDLE DEFERRED ITEMS
