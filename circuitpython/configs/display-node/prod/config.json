@@ -1,0 +1,13 @@
+{
+  "environment": "prod",
+  "device_id": "display-node-01",
+  "device_type": "display-node",
+  "feed_group": "poolio",
+  "debug": false,
+  "refresh_interval_seconds": 30,
+  "watchdog_timeout_seconds": 120,
+  "display": {
+    "brightness": 100,
+    "screen_timeout_seconds": 300
+  }
+}

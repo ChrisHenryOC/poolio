@@ -1,0 +1,13 @@
+{
+  "environment": "prod",
+  "device_id": "valve-node-01",
+  "device_type": "valve-node",
+  "feed_group": "poolio",
+  "debug": false,
+  "publish_interval_seconds": 60,
+  "watchdog_timeout_seconds": 120,
+  "valve": {
+    "max_fill_duration_minutes": 30,
+    "cooldown_minutes": 5
+  }
+}
