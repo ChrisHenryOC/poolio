@@ -66,3 +66,9 @@ module = [
     "onewireio",
 ]
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "adafruit-io>=2.8.0",
+    "setuptools>=80.10.2",
+]
