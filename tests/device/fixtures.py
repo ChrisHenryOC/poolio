@@ -112,8 +112,3 @@ class MockCallTracker:
             raise self.exception_type(f"Mock failure {self.call_count}")
 
         return self.return_value
-
-    def reset(self):
-        """Reset call tracking state."""
-        self.call_count = 0
-        self.call_times = []

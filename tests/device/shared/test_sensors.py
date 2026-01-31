@@ -1,8 +1,8 @@
 """
 On-device tests for the shared.sensors module.
 
-These tests verify retry logic functionality. Bus recovery tests are
-skipped when hardware is not available.
+These tests verify retry logic functionality. Bus recovery tests
+requiring hardware are planned for a future phase.
 """
 
 from shared.sensors import retry_with_backoff

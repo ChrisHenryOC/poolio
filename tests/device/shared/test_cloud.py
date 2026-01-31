@@ -12,6 +12,7 @@ from tests.device.assertions import (
     assert_is_none,
     assert_is_not_none,
     assert_true,
+    skip,
 )
 
 # =============================================================================
@@ -185,8 +186,7 @@ def test_mock_backend_sync_time():
         result = backend.sync_time()
         assert_is_not_none(result)
     except RuntimeError:
-        # Expected if datetime module is not available on device
-        pass
+        skip("datetime module not available")
 
 
 # =============================================================================
