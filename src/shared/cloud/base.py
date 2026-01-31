@@ -27,6 +27,11 @@ class CloudBackend:
         """
         self._environment = environment
 
+    @property
+    def environment(self):
+        """Return the environment name."""
+        return self._environment
+
     def _get_feed_name(self, logical_name):
         """
         Apply environment prefix to feed name per NFR-ENV-002.
