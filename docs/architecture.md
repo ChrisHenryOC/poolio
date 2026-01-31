@@ -240,6 +240,10 @@ class CloudBackend:
     Uses duck typing - no abstract enforcement in CircuitPython.
     """
 
+    def __init__(self, environment="prod"):
+        """Initialize with environment for feed name prefixing."""
+        self._environment = environment
+
     def connect(self):
         """Connect to the cloud backend."""
         raise NotImplementedError("Subclasses must implement connect()")
@@ -248,8 +252,13 @@ class CloudBackend:
         """Disconnect from the cloud backend."""
         raise NotImplementedError("Subclasses must implement disconnect()")
 
-    def publish(self, feed, value):
-        """Publish value to feed."""
+    @property
+    def is_connected(self):
+        """Return True if connected to the backend."""
+        raise NotImplementedError("Subclasses must implement is_connected")
+
+    def publish(self, feed, value, qos=0):
+        """Publish value to feed. qos: 0=at most once, 1=at least once."""
         raise NotImplementedError("Subclasses must implement publish()")
 
     def subscribe(self, feed, callback):
@@ -260,8 +269,8 @@ class CloudBackend:
         """Fetch latest value from feed. Returns the value."""
         raise NotImplementedError("Subclasses must implement fetch_latest()")
 
-    def fetch_history(self, feed, hours):
-        """Fetch historical values from feed. Returns list."""
+    def fetch_history(self, feed, hours, resolution=6):
+        """Fetch historical values from feed. resolution: minutes between points."""
         raise NotImplementedError("Subclasses must implement fetch_history()")
 
     def sync_time(self):
@@ -1371,11 +1380,11 @@ CircuitPython does not have the `abc` module. Use `NotImplementedError` for inte
 from abc import ABC, abstractmethod
 class CloudBackend(ABC):
     @abstractmethod
-    def publish(self, feed, value): ...
+    def publish(self, feed, value, qos=0): ...
 
 # CircuitPython compatible
 class CloudBackend:
-    def publish(self, feed, value):
+    def publish(self, feed, value, qos=0):
         raise NotImplementedError("Subclasses must implement publish()")
 ```
 

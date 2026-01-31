@@ -28,8 +28,14 @@ class MockBackend(CloudBackend):
         _connected: Boolean indicating connection state
     """
 
-    def __init__(self):
-        """Initialize MockBackend with empty storage."""
+    def __init__(self, environment="prod"):
+        """
+        Initialize MockBackend with empty storage.
+
+        Args:
+            environment: Environment name (default: prod)
+        """
+        super().__init__(environment)
         self._feeds = {}
         self._subscribers = {}
         self._connected = False

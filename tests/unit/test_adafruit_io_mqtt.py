@@ -265,9 +265,25 @@ class TestAdafruitIOMQTTSubscribe:
         topic = call_args[0][0]
         assert topic == "testuser/feeds/pooltemp"
 
+    def test_subscribe_raises_when_not_connected(self) -> None:
+        """subscribe() raises RuntimeError when not connected."""
+        from shared.cloud import AdafruitIOMQTT
+
+        client = AdafruitIOMQTT("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="Not connected"):
+            client.subscribe("pooltemp", lambda f, v: None)
+
 
 class TestAdafruitIOMQTTThrottle:
     """Test throttle handling."""
+
+    def test_subscribe_throttle_raises_when_not_connected(self) -> None:
+        """subscribe_throttle() raises RuntimeError when not connected."""
+        from shared.cloud import AdafruitIOMQTT
+
+        client = AdafruitIOMQTT("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="Not connected"):
+            client.subscribe_throttle()
 
     @patch("shared.cloud.adafruit_io_mqtt.MQTT")
     def test_subscribe_throttle_subscribes_to_throttle_topic(
@@ -348,6 +364,108 @@ class TestAdafruitIOMQTTThrottle:
         mock_time.time.return_value = 2000
         client._handle_throttle("testuser/throttle", "throttle")
         assert client._throttle_until == 2300  # 2000 + 300
+
+
+class TestAdafruitIOMQTTOnMessage:
+    """Test _on_message callback routing."""
+
+    @patch("shared.cloud.adafruit_io_mqtt.MQTT")
+    def test_on_message_routes_to_subscriber_callback(self, mock_mqtt_class: MagicMock) -> None:
+        """_on_message routes incoming messages to registered callbacks."""
+        from shared.cloud import AdafruitIOMQTT
+
+        mock_mqtt = MagicMock()
+        mock_mqtt_class.return_value = mock_mqtt
+
+        client = AdafruitIOMQTT("testuser", "test_api_key")
+        client.connect()
+
+        received = []
+        client.subscribe("pooltemp", lambda f, v: received.append((f, v)))
+
+        # Simulate message receipt
+        client._on_message(None, "testuser/feeds/pooltemp", "72.5")
+
+        assert received == [("pooltemp", "72.5")]
+
+    @patch("shared.cloud.adafruit_io_mqtt.MQTT")
+    def test_on_message_strips_environment_prefix(self, mock_mqtt_class: MagicMock) -> None:
+        """_on_message strips environment prefix from incoming messages."""
+        from shared.cloud import AdafruitIOMQTT
+
+        mock_mqtt = MagicMock()
+        mock_mqtt_class.return_value = mock_mqtt
+
+        client = AdafruitIOMQTT("testuser", "test_api_key", environment="nonprod")
+        client.connect()
+
+        received = []
+        client.subscribe("pooltemp", lambda f, v: received.append((f, v)))
+
+        # Simulate message with environment prefix in topic
+        client._on_message(None, "testuser/feeds/nonprod-pooltemp", "72.5")
+
+        # Callback should receive logical feed name without prefix
+        assert received == [("pooltemp", "72.5")]
+
+    @patch("shared.cloud.adafruit_io_mqtt.MQTT")
+    def test_on_message_callback_error_does_not_crash(self, mock_mqtt_class: MagicMock) -> None:
+        """_on_message catches callback errors without crashing."""
+        from shared.cloud import AdafruitIOMQTT
+
+        mock_mqtt = MagicMock()
+        mock_mqtt_class.return_value = mock_mqtt
+
+        client = AdafruitIOMQTT("testuser", "test_api_key")
+        client.connect()
+
+        def bad_callback(f, v):
+            raise ValueError("Callback error")
+
+        client.subscribe("pooltemp", bad_callback)
+
+        # Should not raise
+        client._on_message(None, "testuser/feeds/pooltemp", "72.5")
+
+    @patch("shared.cloud.adafruit_io_mqtt.MQTT")
+    def test_on_message_ignores_malformed_topics(self, mock_mqtt_class: MagicMock) -> None:
+        """_on_message ignores topics that don't match expected format."""
+        from shared.cloud import AdafruitIOMQTT
+
+        mock_mqtt = MagicMock()
+        mock_mqtt_class.return_value = mock_mqtt
+
+        client = AdafruitIOMQTT("testuser", "test_api_key")
+        client.connect()
+
+        received = []
+        client.subscribe("pooltemp", lambda f, v: received.append((f, v)))
+
+        # Topic without /feeds/ segment should be ignored
+        client._on_message(None, "testuser/other/pooltemp", "72.5")
+
+        assert received == []
+
+    @patch("shared.cloud.adafruit_io_mqtt.time")
+    @patch("shared.cloud.adafruit_io_mqtt.MQTT")
+    def test_on_message_routes_throttle_to_handler(
+        self, mock_mqtt_class: MagicMock, mock_time: MagicMock
+    ) -> None:
+        """_on_message routes throttle messages to _handle_throttle."""
+        from shared.cloud import AdafruitIOMQTT
+
+        mock_mqtt = MagicMock()
+        mock_mqtt_class.return_value = mock_mqtt
+        mock_time.time.return_value = 1000
+
+        client = AdafruitIOMQTT("testuser", "test_api_key")
+        client.connect()
+
+        # Simulate throttle message
+        client._on_message(None, "testuser/throttle", "rate limited")
+
+        # Throttle should have been applied
+        assert client._throttle_until == 1060  # 1000 + 60
 
 
 class TestAdafruitIOMQTTHTTPFallback:

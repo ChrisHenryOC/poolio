@@ -19,6 +19,7 @@ THROTTLE_BACKOFF = [60, 120, 240, 300]
 # Adafruit IO MQTT broker settings
 ADAFRUIT_IO_BROKER = "io.adafruit.com"
 ADAFRUIT_IO_PORT = 8883  # TLS
+MQTT_TIMEOUT = 10  # Socket timeout in seconds per NFR-REL-005
 
 
 class AdafruitIOMQTT(CloudBackend):
@@ -53,9 +54,9 @@ class AdafruitIOMQTT(CloudBackend):
             socket_pool: Socket pool for CircuitPython (optional)
             ssl_context: SSL context for TLS (optional)
         """
+        super().__init__(environment)
         self._username = username
         self._api_key = api_key
-        self._environment = environment
         self._socket_pool = socket_pool
         self._ssl_context = ssl_context
         self._connected = False
@@ -87,6 +88,7 @@ class AdafruitIOMQTT(CloudBackend):
             socket_pool=self._socket_pool,
             ssl_context=self._ssl_context,
             is_ssl=True,
+            socket_timeout=MQTT_TIMEOUT,
         )
 
         # Set up message callback
@@ -108,8 +110,8 @@ class AdafruitIOMQTT(CloudBackend):
 
         try:
             self._mqtt.disconnect()
-        except Exception:
-            pass  # Ignore disconnect errors
+        except Exception as e:
+            print(f"MQTT disconnect error (ignored): {e}")
         finally:
             self._connected = False
             self._mqtt = None
@@ -118,20 +120,6 @@ class AdafruitIOMQTT(CloudBackend):
     def is_connected(self):
         """Return True if connected to the backend."""
         return self._connected
-
-    def _get_feed_name(self, logical_name):
-        """
-        Apply environment prefix to feed name per NFR-ENV-002.
-
-        Args:
-            logical_name: Logical feed name without prefix
-
-        Returns:
-            Feed name with environment prefix (or no prefix for prod)
-        """
-        if self._environment == "prod":
-            return logical_name
-        return f"{self._environment}-{logical_name}"
 
     def _get_topic(self, feed):
         """
@@ -242,8 +230,8 @@ class AdafruitIOMQTT(CloudBackend):
             for callback in self._subscribers["throttle"]:
                 try:
                     callback("throttle", message)
-                except Exception:
-                    pass  # Don't let callback errors affect throttle handling
+                except Exception as e:
+                    print(f"Throttle callback error (ignored): {e}")
 
     def _on_message(self, client, topic, message):
         """
@@ -276,8 +264,8 @@ class AdafruitIOMQTT(CloudBackend):
                 for callback in self._subscribers[logical_feed]:
                     try:
                         callback(logical_feed, message)
-                    except Exception:
-                        pass  # Don't let callback errors crash the client
+                    except Exception as e:
+                        print(f"Callback error for feed '{logical_feed}' (ignored): {e}")
 
     def fetch_latest(self, feed):
         """

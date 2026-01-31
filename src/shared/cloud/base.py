@@ -13,7 +13,33 @@ class CloudBackend:
     Subclasses must implement all methods. Some backends may raise
     NotImplementedError for methods they don't support (e.g., HTTP
     cannot subscribe).
+
+    Attributes:
+        _environment: Environment name (prod, nonprod, dev, test)
     """
+
+    def __init__(self, environment="prod"):
+        """
+        Initialize CloudBackend.
+
+        Args:
+            environment: Environment name (default: prod)
+        """
+        self._environment = environment
+
+    def _get_feed_name(self, logical_name):
+        """
+        Apply environment prefix to feed name per NFR-ENV-002.
+
+        Args:
+            logical_name: Logical feed name without prefix
+
+        Returns:
+            Feed name with environment prefix (or no prefix for prod)
+        """
+        if self._environment == "prod":
+            return logical_name
+        return f"{self._environment}-{logical_name}"
 
     def connect(self):
         """

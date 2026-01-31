@@ -46,9 +46,9 @@ class AdafruitIOHTTP(CloudBackend):
             api_key: Adafruit IO API key
             environment: Environment name (default: prod)
         """
+        super().__init__(environment)
         self._username = username
         self._api_key = api_key
-        self._environment = environment
         self._connected = False
         self._base_url = "https://io.adafruit.com/api/v2"
 
@@ -74,20 +74,6 @@ class AdafruitIOHTTP(CloudBackend):
     def is_connected(self):
         """Return True if connected to the backend."""
         return self._connected
-
-    def _get_feed_name(self, logical_name):
-        """
-        Apply environment prefix to feed name per NFR-ENV-002.
-
-        Args:
-            logical_name: Logical feed name without prefix
-
-        Returns:
-            Feed name with environment prefix (or no prefix for prod)
-        """
-        if self._environment == "prod":
-            return logical_name
-        return f"{self._environment}-{logical_name}"
 
     def _get_headers(self):
         """
