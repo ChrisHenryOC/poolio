@@ -10,12 +10,14 @@ Fix high and medium severity issues from code review for PR $ARGUMENTS.
 ```bash
 # Get review directory and verify diff exists
 ls -d code_reviews/PR$ARGUMENTS-* 2>/dev/null | head -1
+# Verify the diff file exists (run /review-pr first if not)
+test -f code_reviews/PR$ARGUMENTS-*/pr.diff || echo "ERROR: Diff not found. Run /review-pr $ARGUMENTS first."
 # Verify we're on the correct branch
 gh pr view $ARGUMENTS --json headRefName -q '.headRefName'
 git fetch origin <branch> && git checkout <branch>
 ```
 
-The diff is already saved at `code_reviews/PR$ARGUMENTS-<title>/pr.diff` from `/review-pr`.
+The diff is already saved at `code_reviews/PR$ARGUMENTS-<title>/pr.diff` from `/review-pr`. If the diff file doesn't exist, run `/review-pr $ARGUMENTS` first.
 
 Check for @claude comments:
 

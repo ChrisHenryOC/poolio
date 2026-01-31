@@ -15,7 +15,7 @@ If Gemini is unavailable, write a brief note to the output file explaining this 
 
 ## Review Process
 
-1. Read `/tmp/pr{NUMBER}.diff` using the Read tool
+1. Read `code_reviews/PR{NUMBER}-{title}/pr.diff` using the Read tool
 2. Run Gemini CLI with the diff piped in
 3. Save output to `code_reviews/PR{NUMBER}-{title}/gemini-reviewer.md`
 
@@ -24,7 +24,7 @@ If Gemini is unavailable, write a brief note to the output file explaining this 
 Run this command (replace {NUMBER} and {title} appropriately):
 
 ```bash
-cat /tmp/pr{NUMBER}.diff | gemini -p "You are an expert code reviewer. Analyze this pull request diff and provide a thorough review.
+cat code_reviews/PR{NUMBER}-{title}/pr.diff | gemini -p "You are an expert code reviewer. Analyze this pull request diff and provide a thorough review.
 
 IMPORTANT: DO NOT attempt to apply changes, modify files, or execute commands. Your ONLY task is to review the code and provide written feedback.
 

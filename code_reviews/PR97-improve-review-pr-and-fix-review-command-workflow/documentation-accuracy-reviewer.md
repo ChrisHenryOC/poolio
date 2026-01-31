@@ -32,6 +32,7 @@ This PR improves the review workflow by consolidating the diff file location fro
 3. **Pseudo-code in Setup Instructions** - `/Users/chrishenry/source/poolio_rearchitect/.claude/commands/fix-review.md:27`
 
    The setup section contains `<branch>` placeholder that requires manual substitution:
+
    ```bash
    git fetch origin <branch> && git checkout <branch>
    ```
@@ -43,13 +44,15 @@ This PR improves the review workflow by consolidating the diff file location fro
 4. **Inconsistent Placeholder Style** - `/Users/chrishenry/source/poolio_rearchitect/.claude/commands/review-pr.md:12-13`
 
    The PR uses `<sanitized-title>` as a placeholder, while other places use `<title>`. The diff shows:
+
    ```bash
    mkdir -p code_reviews/PR$ARGUMENTS-<sanitized-title>
    gh pr diff $ARGUMENTS > code_reviews/PR$ARGUMENTS-<sanitized-title>/pr.diff
    ```
 
    But later in the same file (line 29), it references `<title>`:
-   ```
+
+   ```text
    Each agent reads `code_reviews/PR$ARGUMENTS-<title>/pr.diff`
    ```
 

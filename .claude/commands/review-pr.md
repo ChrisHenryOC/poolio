@@ -9,8 +9,8 @@ Review PR $ARGUMENTS (auto-detect from current branch if empty).
 
 ```bash
 gh pr view $ARGUMENTS --json title,number -q '.number + " " + .title'
-mkdir -p code_reviews/PR$ARGUMENTS-<sanitized-title>
-gh pr diff $ARGUMENTS > code_reviews/PR$ARGUMENTS-<sanitized-title>/pr.diff
+mkdir -p code_reviews/PR$ARGUMENTS-<title>
+gh pr diff $ARGUMENTS > code_reviews/PR$ARGUMENTS-<title>/pr.diff
 ```
 
 Directory name: PR number + lowercase title with non-alphanumeric replaced by hyphens.
