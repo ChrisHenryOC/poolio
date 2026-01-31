@@ -1,6 +1,8 @@
 # Adafruit IO HTTP client for cloud backend
 # CircuitPython compatible (no dataclasses, no type annotations in signatures)
 
+from .base import CloudBackend
+
 # Import requests with fallback for CircuitPython
 try:
     import requests
@@ -20,7 +22,7 @@ except ImportError:
 HTTP_TIMEOUT = 10
 
 
-class AdafruitIOHTTP:
+class AdafruitIOHTTP(CloudBackend):
     """
     HTTP client for Adafruit IO cloud backend.
 
@@ -44,9 +46,9 @@ class AdafruitIOHTTP:
             api_key: Adafruit IO API key
             environment: Environment name (default: prod)
         """
+        super().__init__(environment)
         self._username = username
         self._api_key = api_key
-        self._environment = environment
         self._connected = False
         self._base_url = "https://io.adafruit.com/api/v2"
 
@@ -73,20 +75,6 @@ class AdafruitIOHTTP:
         """Return True if connected to the backend."""
         return self._connected
 
-    def _get_feed_name(self, logical_name):
-        """
-        Apply environment prefix to feed name per NFR-ENV-002.
-
-        Args:
-            logical_name: Logical feed name without prefix
-
-        Returns:
-            Feed name with environment prefix (or no prefix for prod)
-        """
-        if self._environment == "prod":
-            return logical_name
-        return f"{self._environment}-{logical_name}"
-
     def _get_headers(self):
         """
         Get headers for API requests.
@@ -105,17 +93,23 @@ class AdafruitIOHTTP:
         if requests is None:
             raise RuntimeError("requests module not available")
 
-    def publish(self, feed, value):
+    def publish(self, feed, value, qos=0):
         """
         Publish a value to a feed.
 
         Args:
             feed: Feed name (string)
             value: Value to publish (any type)
+            qos: Quality of Service level (ignored by HTTP, included for interface)
+
+        Returns:
+            True on success
 
         Raises:
             RuntimeError: If requests module is not available or HTTP error
         """
+        # Note: qos parameter is accepted for interface compatibility
+        # but is not meaningful for HTTP (no QoS concept)
         self._require_requests()
 
         feed_name = self._get_feed_name(feed)
@@ -127,6 +121,7 @@ class AdafruitIOHTTP:
         try:
             if response.status_code >= 400:
                 raise RuntimeError(f"HTTP {response.status_code} from Adafruit IO")
+            return True
         finally:
             response.close()
 

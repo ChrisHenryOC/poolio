@@ -3,6 +3,8 @@
 
 import time
 
+from .base import CloudBackend
+
 # Import datetime with fallback to adafruit_datetime for CircuitPython
 try:
     from datetime import datetime
@@ -13,7 +15,7 @@ except ImportError:
         datetime = None
 
 
-class MockBackend:
+class MockBackend(CloudBackend):
     """
     Mock cloud backend for testing.
 
@@ -26,8 +28,14 @@ class MockBackend:
         _connected: Boolean indicating connection state
     """
 
-    def __init__(self):
-        """Initialize MockBackend with empty storage."""
+    def __init__(self, environment="prod"):
+        """
+        Initialize MockBackend with empty storage.
+
+        Args:
+            environment: Environment name (default: prod)
+        """
+        super().__init__(environment)
         self._feeds = {}
         self._subscribers = {}
         self._connected = False
@@ -53,7 +61,7 @@ class MockBackend:
         """Return True if connected to the backend."""
         return self._connected
 
-    def publish(self, feed, value):
+    def publish(self, feed, value, qos=0):
         """
         Publish a value to a feed.
 
@@ -62,7 +70,13 @@ class MockBackend:
         Args:
             feed: Feed name (string)
             value: Value to publish (any type)
+            qos: Quality of Service level (ignored by mock)
+
+        Returns:
+            True (mock always succeeds)
         """
+        # Note: qos parameter is accepted for interface compatibility
+        # but is not used by MockBackend
         timestamp = time.time()
 
         if feed not in self._feeds:
@@ -73,6 +87,8 @@ class MockBackend:
         if feed in self._subscribers:
             for callback in self._subscribers[feed]:
                 callback(feed, value)
+
+        return True
 
     def subscribe(self, feed, callback):
         """
