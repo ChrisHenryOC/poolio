@@ -21,9 +21,9 @@
 | ✅ | #14 | [Integration] AdafruitIO HTTP Client |
 | ✅ | #15 | [Integration] AdafruitIO MQTT Client and Base Class Extraction |
 | ✅ | #16 | [Core] Configuration Management |
-| ⬚ | #17 | [Core] Logging Module |
-| ⬚ | #18 | [Core] Sensor Utilities |
-| ⬚ | #19 | [Test] Foundation Integration Test |
+| ✅ | #17 | [Core] Logging Module |
+| ✅ | #18 | [Core] Sensor Utilities |
+| ✅ | #19 | [Test] Foundation Integration Test |
 | ⬚ | #85 | feat: On-device tests for shared library modules (Phase 2) |
 | ⬚ | #64 | [Setup] Adafruit IO Feed Setup - Nonprod |
 | ⬚ | #65 | [Setup] Deploy Script for CircuitPython |
@@ -116,10 +116,10 @@
 
 | Phase | Total | Complete | Remaining |
 |-------|-------|----------|-----------|
-| 1. Foundation | 16 | 9 | 7 |
+| 1. Foundation | 16 | 12 | 4 |
 | 2a. Pool Node | 12 | 0 | 12 |
 | 2b. Valve Node | 7 | 0 | 7 |
 | 2c. Display Node | 22 | 0 | 22 |
 | 3. Simulators | 7 | 0 | 7 |
 | 4. Deployment | 8 | 0 | 8 |
-| **Total** | **72** | **9** | **63** |
+| **Total** | **72** | **12** | **60** |

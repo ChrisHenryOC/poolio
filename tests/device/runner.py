@@ -238,6 +238,27 @@ def _get_test_modules():
     except ImportError:
         pass
 
+    try:
+        from .shared import test_cloud
+
+        modules.append((test_cloud, "shared.cloud"))
+    except ImportError:
+        pass
+
+    try:
+        from .shared import test_config
+
+        modules.append((test_config, "shared.config"))
+    except ImportError:
+        pass
+
+    try:
+        from .shared import test_sensors
+
+        modules.append((test_sensors, "shared.sensors"))
+    except ImportError:
+        pass
+
     return modules
 
 

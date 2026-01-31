@@ -100,7 +100,7 @@ python scripts/serial_monitor.py --reset --timeout 60
 |------------|-------|----------|--------|
 | Unit tests | 206 | `tests/unit/` | pytest (Blinka) |
 | Integration tests | 3 | `tests/integration/` | pytest |
-| Device tests | 27 | `tests/device/` | CircuitPython hardware |
+| Device tests | 71 | `tests/device/` | CircuitPython hardware |
 
 ### CI/CD
 
