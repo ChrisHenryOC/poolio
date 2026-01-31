@@ -2,6 +2,7 @@
 # Tests end-to-end: create → encode → publish → subscribe → decode → verify
 
 
+import pytest
 from src.shared.cloud import MockBackend
 from src.shared.messages import (
     Battery,
@@ -17,14 +18,21 @@ from src.shared.messages import (
 )
 
 
+@pytest.fixture
+def backend():
+    """Provide a connected MockBackend instance with automatic cleanup."""
+    b = MockBackend(environment="test")
+    b.connect()
+    yield b
+    b.disconnect()
+
+
 class TestMessageFlow:
     """End-to-end integration tests for message encoding/decoding through MockBackend."""
 
-    def test_pool_status_round_trip(self) -> None:
+    def test_pool_status_round_trip(self, backend: MockBackend) -> None:
         """PoolStatus message survives encode → publish → subscribe → decode."""
-        # Setup backend with subscription
-        backend = MockBackend(environment="test")
-        backend.connect()
+        # Setup subscription
         received_messages: list[str] = []
         backend.subscribe("test-poolstatus", lambda f, v: received_messages.append(v))
 
@@ -48,28 +56,17 @@ class TestMessageFlow:
         decoded = decode_message(received_messages[0])
         assert isinstance(decoded, PoolStatus)
 
-        # Verify nested WaterLevel
-        assert decoded.water_level.float_switch == original.water_level.float_switch
-        assert decoded.water_level.confidence == original.water_level.confidence
-
-        # Verify nested Temperature
-        assert decoded.temperature.value == original.temperature.value
-        assert decoded.temperature.unit == original.temperature.unit
-
-        # Verify nested Battery
-        assert decoded.battery.voltage == original.battery.voltage
-        assert decoded.battery.percentage == original.battery.percentage
+        # Verify nested objects using __eq__
+        assert decoded.water_level == original.water_level
+        assert decoded.temperature == original.temperature
+        assert decoded.battery == original.battery
 
         # Verify top-level field
         assert decoded.reporting_interval == original.reporting_interval
 
-        backend.disconnect()
-
-    def test_valve_status_round_trip(self) -> None:
+    def test_valve_status_round_trip(self, backend: MockBackend) -> None:
         """ValveStatus message survives encode → publish → subscribe → decode."""
-        # Setup backend with subscription
-        backend = MockBackend(environment="test")
-        backend.connect()
+        # Setup subscription
         received_messages: list[str] = []
         backend.subscribe("test-valvestatus", lambda f, v: received_messages.append(v))
 
@@ -114,17 +111,12 @@ class TestMessageFlow:
         assert decoded.schedule.window_hours == original.schedule.window_hours
         assert decoded.schedule.next_scheduled_fill == original.schedule.next_scheduled_fill
 
-        # Verify nested Temperature
-        assert decoded.temperature.value == original.temperature.value
-        assert decoded.temperature.unit == original.temperature.unit
+        # Verify nested Temperature using __eq__
+        assert decoded.temperature == original.temperature
 
-        backend.disconnect()
-
-    def test_command_round_trip(self) -> None:
+    def test_command_round_trip(self, backend: MockBackend) -> None:
         """Command message survives encode → publish → subscribe → decode."""
-        # Setup backend with subscription
-        backend = MockBackend(environment="test")
-        backend.connect()
+        # Setup subscription
         received_messages: list[str] = []
         backend.subscribe("test-command", lambda f, v: received_messages.append(v))
 
@@ -155,5 +147,3 @@ class TestMessageFlow:
         assert decoded.parameters == original.parameters
         assert decoded.parameters["duration"] == 300
         assert decoded.parameters["force"] is True
-
-        backend.disconnect()

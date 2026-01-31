@@ -423,6 +423,7 @@ SUMMARY: 27 passed, 0 failed, 0 error, 0 skipped
 | Test Type | Location | Count | Purpose |
 |-----------|----------|-------|---------|
 | Unit tests | `tests/unit/` | 206 | Full coverage, runs in CI |
+| Integration tests | `tests/integration/` | 3 | Message round-trip flow |
 | Device tests | `tests/device/` | 27 | Hardware validation |
 
 ## Sequential Thinking
