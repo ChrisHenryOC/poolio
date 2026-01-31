@@ -77,6 +77,26 @@ class TestGetLogger:
         assert "my-pool-node" in output
         assert "Test message" in output
 
+    def test_get_logger_does_not_duplicate_handlers_on_repeated_calls(self) -> None:
+        """get_logger does not add duplicate handlers on repeated calls."""
+        from shared.logging import get_logger
+
+        # Use unique device_id to avoid interference from other tests
+        device_id = "test-no-duplicate-handlers"
+
+        # First call
+        logger1 = get_logger(device_id)
+        initial_handler_count = len(logger1.handlers)
+
+        # Second call with same device_id
+        logger2 = get_logger(device_id)
+
+        # Should be the same logger instance
+        assert logger1 is logger2
+
+        # Handler count should not have increased
+        assert len(logger2.handlers) == initial_handler_count
+
 
 class TestIsWritable:
     """Tests for is_writable function."""
@@ -251,6 +271,98 @@ class TestRotatingFileHandler:
         assert handler.backupCount == 2  # 3 total files
         handler.close()
 
+    def test_rotating_file_handler_no_rotation_when_max_bytes_zero(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """RotatingFileHandler does not rotate when maxBytes=0."""
+        from shared.logging import RotatingFileHandler
+
+        log_file = tmp_path / "test.log"
+        # maxBytes=0 disables rotation
+        handler = RotatingFileHandler(str(log_file), maxBytes=0, backupCount=2)
+        handler.setFormatter(logging.Formatter("%(message)s"))
+
+        # Write enough data that would trigger rotation if maxBytes was positive
+        for i in range(50):
+            record = logging.LogRecord(
+                name="test",
+                level=logging.INFO,
+                pathname="",
+                lineno=0,
+                msg=f"Message {i:04d} with lots of padding text to make it big",
+                args=(),
+                exc_info=None,
+            )
+            handler.emit(record)
+
+        handler.close()
+
+        # Should only have the main log file, no backups
+        assert log_file.exists()
+        assert not (tmp_path / "test.log.1").exists()
+        assert not (tmp_path / "test.log.2").exists()
+
+    def test_rotating_file_handler_emit_handles_exceptions(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """RotatingFileHandler.emit() handles exceptions gracefully."""
+        from unittest.mock import MagicMock
+
+        from shared.logging import RotatingFileHandler
+
+        log_file = tmp_path / "test.log"
+        handler = RotatingFileHandler(str(log_file))
+        handler.setFormatter(logging.Formatter("%(message)s"))
+
+        # Mock handleError to track if it's called
+        handler.handleError = MagicMock()
+
+        # Close the file to cause write to fail
+        handler._file.close()
+        handler._file = None
+
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="Test message",
+            args=(),
+            exc_info=None,
+        )
+        # Should not raise - exception should be caught
+        handler.emit(record)
+
+        # handleError should have been called
+        handler.handleError.assert_called_once_with(record)
+
+    def test_rotating_file_handler_creates_nested_directories(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """RotatingFileHandler creates nested directories if they don't exist."""
+        from shared.logging import RotatingFileHandler
+
+        # Use a deeply nested path
+        log_file = tmp_path / "a" / "b" / "c" / "test.log"
+        handler = RotatingFileHandler(str(log_file))
+        handler.setFormatter(logging.Formatter("%(message)s"))
+
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="Test message",
+            args=(),
+            exc_info=None,
+        )
+        handler.emit(record)
+        handler.close()
+
+        # File and directories should exist
+        assert log_file.exists()
+        assert (tmp_path / "a" / "b" / "c").is_dir()
+
 
 class TestAddFileLogging:
     """Tests for add_file_logging function."""
@@ -324,3 +436,32 @@ class TestAddFileLogging:
 
         content = log_file.read_text()
         assert "Test message to file" in content
+
+    def test_add_file_logging_with_bare_filename(
+        self, tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """add_file_logging works with bare filename (no directory component)."""
+        from shared.logging import add_file_logging, get_logger
+
+        # Change to tmp_path so bare filename is created there
+        monkeypatch.chdir(tmp_path)
+
+        logger = get_logger("test-bare-filename")
+        bare_filename = "bare_test.log"
+
+        result = add_file_logging(logger, bare_filename)
+        assert result is True
+
+        logger.info("Test bare filename message")
+
+        # Find and close the file handler
+        for handler in logger.handlers:
+            if hasattr(handler, "filename") and handler.filename == bare_filename:
+                handler.close()
+                break
+
+        # File should exist in current directory (tmp_path)
+        log_file = tmp_path / bare_filename
+        assert log_file.exists()
+        content = log_file.read_text()
+        assert "Test bare filename message" in content
