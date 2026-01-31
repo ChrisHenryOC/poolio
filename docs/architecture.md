@@ -492,7 +492,8 @@ Each device has its own configuration feed that stores the complete configuratio
 src/shared/logging/
 ├── __init__.py
 ├── logger.py              # Wrapper around adafruit_logging
-└── rotating_handler.py    # RotatingFileHandler (extends FileHandler)
+├── rotating_handler.py    # RotatingFileHandler (extends logging.Handler)
+└── filesystem.py          # Filesystem utilities (is_writable, add_file_logging)
 ```
 
 **Base Library:** Uses [adafruit_logging](https://docs.circuitpython.org/projects/logging/en/latest/) which provides `Logger`, `FileHandler`, and `StreamHandler`. We extend it with rotation and graceful filesystem handling.
@@ -507,6 +508,8 @@ def get_logger(device_id, debug_logging=False):
     """
     Configure and return a logger with device context.
     Console (StreamHandler) is always added.
+    Repeated calls with the same device_id return the same logger
+    without adding duplicate handlers.
 
     Args:
         device_id: Device identifier for log context (str)
@@ -518,16 +521,32 @@ def get_logger(device_id, debug_logging=False):
     logger = logging.getLogger(device_id)
     logger.setLevel(logging.DEBUG if debug_logging else logging.INFO)
 
-    # Add console handler (always available)
-    console = logging.StreamHandler()
-    console.setFormatter(logging.Formatter(f"{{levelname}} {device_id}: {{message}}"))
-    logger.addHandler(console)
+    # Only add handler if this logger doesn't have direct handlers
+    if len(logger.handlers) == 0:
+        console = logging.StreamHandler()
+        console.setFormatter(logging.Formatter(f"{{levelname}} {device_id}: {{message}}"))
+        logger.addHandler(console)
 
     return logger
+
+
+# filesystem.py - Filesystem utilities
+def is_writable(path):
+    """
+    Check if a directory path is writable.
+
+    Args:
+        path: Directory path to check (str)
+
+    Returns:
+        True if writable, False otherwise.
+    """
+    ...
 
 def add_file_logging(logger, log_path):
     """
     Add rotating file handler if filesystem is writable.
+    Checks writability BEFORE creating the handler (fail-fast).
 
     Args:
         logger: logging.Logger instance
@@ -536,57 +555,41 @@ def add_file_logging(logger, log_path):
     Returns:
         True if file logging enabled, False if filesystem is read-only.
     """
+    log_dir = os.path.dirname(log_path) or "."
+    if not is_writable(log_dir):
+        return False
     handler = RotatingFileHandler(log_path)
-    if handler.is_writable():
-        logger.addHandler(handler)
-        return True
-    return False
+    logger.addHandler(handler)
+    return True
 
 
 # rotating_handler.py - File rotation (adafruit_logging lacks this)
-from adafruit_logging import FileHandler
+import logging
 
-class RotatingFileHandler(FileHandler):
+class RotatingFileHandler(logging.Handler):
     """
-    FileHandler with size-based rotation.
+    Handler with size-based rotation.
 
     Rotation parameters (from NFR-MAINT-001):
-    - Maximum file size: 125KB
-    - Maximum file count: 3
+    - Maximum file size: 125 KiB (128000 bytes)
+    - Maximum file count: 3 (1 current + 2 backups)
     - Oldest file deleted when limit exceeded
     """
-    MAX_FILE_SIZE = 125 * 1024  # 125KB
-    MAX_FILE_COUNT = 3
 
-    def __init__(self, filename):
+    def __init__(self, filename, maxBytes=128000, backupCount=2):
         ...
-
-    def is_writable(self):
-        """Check if filesystem allows writing. Returns False for read-only."""
-        try:
-            with open(self.filename, "a") as f:
-                pass
-            return True
-        except OSError:
-            return False
 
     def emit(self, record):
-        """Write log record, rotating if file exceeds MAX_FILE_SIZE."""
-        self._rotate_if_needed()
-        super().emit(record)
-
-    def _rotate_if_needed(self):
-        """Rotate log files if current file exceeds MAX_FILE_SIZE."""
-        ...
-
-    def _cleanup_old_files(self):
-        """Delete oldest files if count exceeds MAX_FILE_COUNT."""
+        """Write log record, rotating if file exceeds maxBytes."""
+        if self._should_rotate():
+            self._do_rotation()
+        # Write and flush
         ...
 ```
 
 **Filesystem Graceful Degradation:**
 
-CircuitPython devices typically cannot write to local storage while running (the CIRCUITPY drive is mounted as USB mass storage). The logger handles this gracefully by checking `is_writable()` before adding the file handler.
+CircuitPython devices typically cannot write to local storage while running (the CIRCUITPY drive is mounted as USB mass storage). The logger handles this gracefully by checking `is_writable()` before creating the file handler (fail-fast pattern).
 
 **Cloud Event Publishing:** Significant errors should be published to the cloud `events` feed using `cloud.publish()` at the application layer. This keeps the logger simple and gives application code control over what gets sent to the cloud.
 
