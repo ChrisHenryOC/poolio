@@ -272,3 +272,15 @@ class TestRetryWithBackoffEdgeCases:
         # (no sleep after final failure)
         assert func.call_count == 3
         assert mock_sleep.call_count == 2
+
+    def test_base_delay_greater_than_max_delay(self):
+        """First delay is capped when base_delay > max_delay."""
+        from src.shared.sensors.retry import retry_with_backoff
+
+        func = Mock(side_effect=[ValueError(), "success"])
+
+        with patch("src.shared.sensors.retry.time.sleep") as mock_sleep:
+            retry_with_backoff(func, base_delay=5.0, max_delay=1.0)
+
+        # Delay should be capped at max_delay (1.0), not base_delay (5.0)
+        mock_sleep.assert_called_once_with(1.0)

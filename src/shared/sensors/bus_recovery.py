@@ -92,7 +92,7 @@ def recover_i2c_bus(scl_pin, sda_pin):
         logger.info("I2C bus recovery successful")
         return True
 
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError) as e:
         logger.error("I2C bus recovery failed: %s", e)
         return False
 
@@ -157,7 +157,7 @@ def recover_onewire_bus(data_pin):
         logger.info("OneWire bus recovery successful")
         return True
 
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError) as e:
         logger.error("OneWire bus recovery failed: %s", e)
         return False
 

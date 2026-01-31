@@ -44,18 +44,29 @@ class TestRecoverI2CBus:
         scl_pin = Mock()
         sda_pin = Mock()
 
+        # Track value assignments
+        value_assignments = []
+
         with patch("src.shared.sensors.bus_recovery.digitalio") as mock_digitalio:
             with patch("src.shared.sensors.bus_recovery.busio"):
                 with patch("src.shared.sensors.bus_recovery.time"):
                     mock_scl_gpio = MagicMock()
+                    # Track each value assignment
+                    type(mock_scl_gpio).value = property(
+                        fget=lambda self: None,
+                        fset=lambda self, v: value_assignments.append(v),
+                    )
                     mock_digitalio.DigitalInOut.return_value = mock_scl_gpio
 
                     recover_i2c_bus(scl_pin, sda_pin)
 
-                    # The value property is accessed for 9 toggles (high/low)
-                    # plus one final high, so we should have value assignments
-                    # Verify mock was used (basic check that toggle happened)
-                    assert mock_scl_gpio.value is not None
+        # 9 toggles (high/low each) = 18 assignments + 1 final high = 19 total
+        assert len(value_assignments) == 19
+        # Verify pattern: alternating True/False for 18, then final True
+        for i in range(18):
+            expected = i % 2 == 0  # True for even indices (high), False for odd (low)
+            assert value_assignments[i] == expected
+        assert value_assignments[18] is True  # Final release high
 
     def test_reinitializes_i2c_bus(self):
         """I2C bus is reinitialized after recovery."""
@@ -69,11 +80,15 @@ class TestRecoverI2CBus:
                 with patch("src.shared.sensors.bus_recovery.time"):
                     mock_scl_gpio = MagicMock()
                     mock_digitalio.DigitalInOut.return_value = mock_scl_gpio
+                    mock_i2c = MagicMock()
+                    mock_busio.I2C.return_value = mock_i2c
 
                     recover_i2c_bus(scl_pin, sda_pin)
 
                     # Verify I2C was created with correct pins
                     mock_busio.I2C.assert_called_once_with(scl_pin, sda_pin)
+                    # Verify I2C was immediately deinitialized
+                    mock_i2c.deinit.assert_called_once()
 
     def test_returns_false_on_exception(self):
         """Returns False when recovery fails."""
@@ -198,11 +213,15 @@ class TestRecoverOneWireBus:
                 with patch("src.shared.sensors.bus_recovery.time"):
                     mock_data_gpio = MagicMock()
                     mock_digitalio.DigitalInOut.return_value = mock_data_gpio
+                    mock_ow = MagicMock()
+                    mock_onewire.OneWire.return_value = mock_ow
 
                     recover_onewire_bus(data_pin)
 
                     # Verify OneWire was created with correct pin
                     mock_onewire.OneWire.assert_called_once_with(data_pin)
+                    # Verify OneWire was immediately deinitialized
+                    mock_ow.deinit.assert_called_once()
 
     def test_returns_false_on_exception(self):
         """Returns False when recovery fails."""

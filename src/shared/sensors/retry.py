@@ -27,6 +27,8 @@ def retry_with_backoff(
 
     With max_retries=6: 100ms, 200ms, 400ms, 800ms, 1600ms, 2000ms (capped)
 
+    Note: Total attempts = max_retries + 1 (initial attempt plus retries)
+
     Args:
         func: Callable to execute (no arguments)
         max_retries: Maximum number of retry attempts after initial failure (int)
@@ -41,7 +43,7 @@ def retry_with_backoff(
     Raises:
         The last exception if all retries are exhausted
     """
-    delay = base_delay
+    delay = min(base_delay, max_delay)  # Cap initial delay too
     last_exception = None
 
     # Total attempts = initial + max_retries
