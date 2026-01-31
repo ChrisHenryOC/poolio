@@ -33,9 +33,12 @@ FEEDS = [
     ("outsidetemp", "Outside air temperature readings (Fahrenheit)"),
     ("insidetemp", "Inside temperature readings (Fahrenheit)"),
     ("poolnodebattery", "Pool node battery percentage (0-100)"),
-    ("poolvalveruntime", "Daily valve runtime in seconds"),
+    ("poolvalveruntime", "Daily valve runtime in minutes"),
     ("valvestarttime", "Scheduled fill window start time (HH:MM format)"),
     ("config", "Device configuration JSON"),
+    ("config-pool-node", "Pool Node device configuration"),
+    ("config-valve-node", "Valve Node device configuration"),
+    ("config-display-node", "Display Node device configuration"),
     ("events", "System events and diagnostic messages"),
 ]
 

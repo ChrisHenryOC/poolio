@@ -19,9 +19,12 @@ The nonprod environment mirrors production with a `poolio-nonprod` prefix:
 | outsidetemp | `poolio-nonprod.outsidetemp` | Outside air temperature | Valve Node | Display |
 | insidetemp | `poolio-nonprod.insidetemp` | Inside temperature | Display Node | - |
 | poolnodebattery | `poolio-nonprod.poolnodebattery` | Battery percentage | Pool Node | Display |
-| poolvalveruntime | `poolio-nonprod.poolvalveruntime` | Daily valve runtime (seconds) | Valve Node | Display |
+| poolvalveruntime | `poolio-nonprod.poolvalveruntime` | Daily valve runtime (minutes) | Valve Node | Display |
 | valvestarttime | `poolio-nonprod.valvestarttime` | Fill window start (HH:MM) | Admin | Valve Node |
 | config | `poolio-nonprod.config` | Device configuration JSON | Admin | All Nodes |
+| config-pool-node | `poolio-nonprod.config-pool-node` | Pool Node configuration | Admin | Pool Node |
+| config-valve-node | `poolio-nonprod.config-valve-node` | Valve Node configuration | Admin | Valve Node |
+| config-display-node | `poolio-nonprod.config-display-node` | Display Node configuration | Admin | Display Node |
 | events | `poolio-nonprod.events` | System events/diagnostics | All Nodes | Admin |
 
 ## Manual Setup (Web UI)
@@ -45,7 +48,7 @@ For each feed in the table above:
 3. Enter the feed name and description
 4. Click **Create**
 
-Repeat for all 9 feeds:
+Repeat for all 12 feeds:
 
 | Feed Name | Description |
 |-----------|-------------|
@@ -54,25 +57,28 @@ Repeat for all 9 feeds:
 | outsidetemp | Outside air temperature readings (Fahrenheit) |
 | insidetemp | Inside temperature readings (Fahrenheit) |
 | poolnodebattery | Pool node battery percentage (0-100) |
-| poolvalveruntime | Daily valve runtime in seconds |
+| poolvalveruntime | Daily valve runtime in minutes |
 | valvestarttime | Scheduled fill window start time (HH:MM format) |
 | config | Device configuration JSON |
+| config-pool-node | Pool Node device configuration |
+| config-valve-node | Valve Node device configuration |
+| config-display-node | Display Node device configuration |
 | events | System events and diagnostic messages |
 
 ### Step 3: Configure Feed Settings
 
 All feeds are private by default (require API key for read/write). This is the correct setting.
 
-For the `config` feed, consider setting history to 1 data point to only retain the latest configuration:
+For all config feeds (`config`, `config-pool-node`, `config-valve-node`, `config-display-node`), set history to 1 data point to only retain the latest configuration:
 
-1. Click on the `config` feed
+1. Click on the config feed
 2. Click **Feed Info** (gear icon)
 3. Under **Feed History**, set to `1`
 4. Click **Save**
 
 ## Automated Setup (Python Script)
 
-Use the provided script for automated feed creation:
+Use the provided script for automated feed creation. The script supports all environments: `prod`, `nonprod`, `dev`, and `test`.
 
 ```bash
 # Install dependencies
@@ -85,7 +91,7 @@ python scripts/adafruit_io_setup.py --username YOUR_USERNAME --key YOUR_AIO_KEY 
 The script will:
 
 1. Create the `poolio-nonprod` feed group (if it doesn't exist)
-2. Create all 9 feeds within the group
+2. Create all 12 feeds within the group
 3. Report success/failure for each feed
 
 ## Verification
@@ -93,7 +99,7 @@ The script will:
 ### Via Web UI
 
 1. Navigate to **Feeds** → `poolio-nonprod`
-2. Verify all 9 feeds are listed
+2. Verify all 12 feeds are listed
 3. Click each feed to confirm it loads without error
 
 ### Via API (curl)
