@@ -20,7 +20,7 @@ All reviews should consider:
 
 ## Review Process
 
-1. Read `/tmp/pr{NUMBER}.diff` using the Read tool
+1. Read `code_reviews/PR{NUMBER}-{title}/pr.diff` using the Read tool
 2. Focus on changed lines (+ lines in diff)
 3. Flag issues only in new/modified code unless critical
 4. Write findings to `code_reviews/PR{NUMBER}-{title}/{agent-name}.md`
