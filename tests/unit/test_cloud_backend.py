@@ -1,8 +1,9 @@
 # Tests for CloudBackend base class and interface compliance
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from shared.cloud import CloudBackend, MockBackend, AdafruitIOHTTP
+from shared.cloud import AdafruitIOHTTP, CloudBackend, MockBackend
 
 
 class TestCloudBackendBaseClass:
@@ -105,19 +106,15 @@ class TestAdafruitIOHTTPInheritance:
         assert isinstance(backend, CloudBackend)
 
     @pytest.fixture
-    def mock_requests(self) -> "pytest.fixture":
+    def mock_requests(self) -> MagicMock:
         """Mock requests module for HTTP tests."""
-        from unittest.mock import MagicMock, patch
-
         with patch("shared.cloud.adafruit_io_http.requests") as mock:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock.post.return_value = mock_response
             yield mock
 
-    def test_adafruitiohttp_publish_accepts_qos_parameter(
-        self, mock_requests: "MagicMock"
-    ) -> None:
+    def test_adafruitiohttp_publish_accepts_qos_parameter(self, mock_requests: MagicMock) -> None:
         """AdafruitIOHTTP.publish() accepts qos parameter."""
         backend = AdafruitIOHTTP("user", "key")
         # Should not raise - qos is accepted but ignored
