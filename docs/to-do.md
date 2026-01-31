@@ -17,16 +17,19 @@
 | ✅ | #11 | [Core] Message Envelope and Encoding |
 | ✅ | #12 | [Core] Message Validation (Simple) |
 | ✅ | #83 | feat: General-purpose on-device test framework for CircuitPython |
-| ⬚ | #13 | [Core] Mock Cloud Backend for Testing |
-| ⬚ | #14 | [Integration] AdafruitIO HTTP Client |
-| ⬚ | #15 | [Integration] AdafruitIO MQTT Client and Base Class Extraction |
+| ✅ | #13 | [Core] Mock Cloud Backend for Testing |
+| ✅ | #14 | [Integration] AdafruitIO HTTP Client |
+| ✅ | #15 | [Integration] AdafruitIO MQTT Client and Base Class Extraction |
 | ⬚ | #16 | [Core] Configuration Management |
 | ⬚ | #17 | [Core] Logging Module |
 | ⬚ | #18 | [Core] Sensor Utilities |
 | ⬚ | #19 | [Test] Foundation Integration Test |
 | ⬚ | #85 | feat: On-device tests for shared library modules (Phase 2) |
+| ⬚ | #64 | [Setup] Adafruit IO Feed Setup - Nonprod |
+| ⬚ | #65 | [Setup] Deploy Script for CircuitPython |
+| ⬚ | #66 | [Setup] Configuration Files - Nonprod |
 
-## Phase 2: Pool Node (C++)
+## Phase 2a: Pool Node (C++)
 
 | Status | Issue | Title |
 |--------|-------|-------|
@@ -41,8 +44,9 @@
 | ⬚ | #28 | [Core] Watchdog and Sleep Manager |
 | ⬚ | #29 | [Integration] Pool Node Controller Integration |
 | ⬚ | #30 | [Test] Pool Node Hardware Testing |
+| ⬚ | #67 | [Integration] Pool Node Nonprod Build and Deploy |
 
-## Phase 3: Valve Node (CircuitPython)
+## Phase 2b: Valve Node (CircuitPython)
 
 | Status | Issue | Title |
 |--------|-------|-------|
@@ -52,8 +56,9 @@
 | ⬚ | #34 | [Core] Valve Controller Core |
 | ⬚ | #35 | [Integration] Valve Node Integration |
 | ⬚ | #36 | [Test] Valve Node Hardware Testing |
+| ⬚ | #68 | [Integration] Valve Node Nonprod Deployment |
 
-## Phase 4: Display Node (CircuitPython)
+## Phase 2c: Display Node (CircuitPython)
 
 | Status | Issue | Title |
 |--------|-------|-------|
@@ -78,8 +83,9 @@
 | ⬚ | #55 | [Test] Display Node Hardware Testing |
 | ⬚ | #56 | [Core] Historical Screen |
 | ⬚ | #86 | feat: On-device tests for node-specific modules (Phase 3) |
+| ⬚ | #69 | [Integration] Display Node Nonprod Deployment |
 
-## Phase 5: Simulators
+## Phase 3: Simulators
 
 | Status | Issue | Title |
 |--------|-------|-------|
@@ -91,23 +97,12 @@
 | ⬚ | #62 | [Test] Integration Test Suite - Error Scenarios |
 | ⬚ | #63 | [Test] Integration Test Suite - Edge Cases |
 
-## Phase 6: Nonprod Deployment
+## Phase 4: Deployment
 
 | Status | Issue | Title |
 |--------|-------|-------|
-| ⬚ | #64 | [Setup] Adafruit IO Feed Setup - Nonprod |
-| ⬚ | #65 | [Setup] Deploy Script for CircuitPython |
-| ⬚ | #66 | [Setup] Configuration Files - Nonprod |
-| ⬚ | #67 | [Integration] Pool Node Nonprod Build and Deploy |
-| ⬚ | #68 | [Integration] Valve Node Nonprod Deployment |
-| ⬚ | #69 | [Integration] Display Node Nonprod Deployment |
 | ⬚ | #70 | [Test] Nonprod System Integration Test |
 | ⬚ | #71 | [Test] Nonprod 1-Week Stability Test |
-
-## Phase 7: Production Deployment
-
-| Status | Issue | Title |
-|--------|-------|-------|
 | ⬚ | #72 | [Setup] Adafruit IO Feed Setup - Production |
 | ⬚ | #73 | [Setup] Configuration Files - Production |
 | ⬚ | #74 | [Docs] Pre-Production Checklist |
@@ -121,11 +116,10 @@
 
 | Phase | Total | Complete | Remaining |
 |-------|-------|----------|-----------|
-| 1. Foundation | 13 | 5 | 8 |
-| 2. Pool Node | 11 | 0 | 11 |
-| 3. Valve Node | 6 | 0 | 6 |
-| 4. Display Node | 21 | 0 | 21 |
-| 5. Simulators | 7 | 0 | 7 |
-| 6. Nonprod | 8 | 0 | 8 |
-| 7. Production | 6 | 0 | 6 |
-| **Total** | **72** | **5** | **67** |
+| 1. Foundation | 16 | 8 | 8 |
+| 2a. Pool Node | 12 | 0 | 12 |
+| 2b. Valve Node | 7 | 0 | 7 |
+| 2c. Display Node | 22 | 0 | 22 |
+| 3. Simulators | 7 | 0 | 7 |
+| 4. Deployment | 8 | 0 | 8 |
+| **Total** | **72** | **8** | **64** |
