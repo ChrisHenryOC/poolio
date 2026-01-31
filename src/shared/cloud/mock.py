@@ -107,17 +107,20 @@ class MockBackend:
 
         return self._feeds[feed][-1][1]
 
-    def fetch_history(self, feed, hours):
+    def fetch_history(self, feed, hours, resolution=6):
         """
         Fetch historical values from a feed within time window.
 
         Args:
             feed: Feed name (string)
             hours: Number of hours to look back (integer or float)
+            resolution: Data point interval in minutes (default: 6, ignored by mock)
 
         Returns:
             List of values in chronological order (oldest first)
         """
+        # Note: resolution parameter is accepted for interface compatibility
+        # with AdafruitIOHTTP but ignored by MockBackend
         if feed not in self._feeds:
             return []
 

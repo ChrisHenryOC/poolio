@@ -418,3 +418,382 @@ class TestAdafruitIOHTTPSyncTime:
         assert result.hour == 10
         assert result.minute == 30
         assert result.second == 45
+
+
+class TestAdafruitIOHTTPErrorResponses:
+    """Test HTTP error response handling."""
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_publish_raises_on_401(self, mock_requests: MagicMock) -> None:
+        """publish() raises RuntimeError on 401 Unauthorized."""
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_requests.post.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "bad_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 401"):
+            client.publish("pooltemp", 72.5)
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_publish_raises_on_429(self, mock_requests: MagicMock) -> None:
+        """publish() raises RuntimeError on 429 Rate Limited."""
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_requests.post.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 429"):
+            client.publish("pooltemp", 72.5)
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_publish_raises_on_500(self, mock_requests: MagicMock) -> None:
+        """publish() raises RuntimeError on 500 Server Error."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_requests.post.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 500"):
+            client.publish("pooltemp", 72.5)
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_latest_raises_on_401(self, mock_requests: MagicMock) -> None:
+        """fetch_latest() raises RuntimeError on 401 Unauthorized."""
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "bad_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 401"):
+            client.fetch_latest("pooltemp")
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_latest_raises_on_500(self, mock_requests: MagicMock) -> None:
+        """fetch_latest() raises RuntimeError on 500 Server Error."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 500"):
+            client.fetch_latest("pooltemp")
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_history_raises_on_401(self, mock_requests: MagicMock) -> None:
+        """fetch_history() raises RuntimeError on 401 Unauthorized."""
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "bad_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 401"):
+            client.fetch_history("pooltemp", hours=24)
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_history_raises_on_500(self, mock_requests: MagicMock) -> None:
+        """fetch_history() raises RuntimeError on 500 Server Error."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 500"):
+            client.fetch_history("pooltemp", hours=24)
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_sync_time_raises_on_401(self, mock_requests: MagicMock) -> None:
+        """sync_time() raises RuntimeError on 401 Unauthorized."""
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "bad_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 401"):
+            client.sync_time()
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_sync_time_raises_on_500(self, mock_requests: MagicMock) -> None:
+        """sync_time() raises RuntimeError on 500 Server Error."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="HTTP 500"):
+            client.sync_time()
+
+
+class TestAdafruitIOHTTPNetworkFailures:
+    """Test network failure handling."""
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_publish_propagates_connection_error(self, mock_requests: MagicMock) -> None:
+        """publish() propagates connection errors."""
+        mock_requests.post.side_effect = Exception("Connection refused")
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(Exception, match="Connection refused"):
+            client.publish("pooltemp", 72.5)
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_latest_propagates_connection_error(self, mock_requests: MagicMock) -> None:
+        """fetch_latest() propagates connection errors."""
+        mock_requests.get.side_effect = Exception("Connection refused")
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(Exception, match="Connection refused"):
+            client.fetch_latest("pooltemp")
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_history_propagates_connection_error(self, mock_requests: MagicMock) -> None:
+        """fetch_history() propagates connection errors."""
+        mock_requests.get.side_effect = Exception("Connection refused")
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(Exception, match="Connection refused"):
+            client.fetch_history("pooltemp", hours=24)
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_sync_time_propagates_connection_error(self, mock_requests: MagicMock) -> None:
+        """sync_time() propagates connection errors."""
+        mock_requests.get.side_effect = Exception("Connection refused")
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(Exception, match="Connection refused"):
+            client.sync_time()
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_publish_includes_timeout(self, mock_requests: MagicMock) -> None:
+        """publish() includes timeout parameter."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.publish("pooltemp", 72.5)
+
+        call_args = mock_requests.post.call_args
+        assert call_args[1]["timeout"] == 10
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_latest_includes_timeout(self, mock_requests: MagicMock) -> None:
+        """fetch_latest() includes timeout parameter."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"value": "72.5"}
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.fetch_latest("pooltemp")
+
+        call_args = mock_requests.get.call_args
+        assert call_args[1]["timeout"] == 10
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_history_includes_timeout(self, mock_requests: MagicMock) -> None:
+        """fetch_history() includes timeout parameter."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": []}
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.fetch_history("pooltemp", hours=24)
+
+        call_args = mock_requests.get.call_args
+        assert call_args[1]["timeout"] == 10
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_sync_time_includes_timeout(self, mock_requests: MagicMock) -> None:
+        """sync_time() includes timeout parameter."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "year": 2024,
+            "mon": 1,
+            "mday": 15,
+            "hour": 10,
+            "min": 30,
+            "sec": 45,
+        }
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.sync_time()
+
+        call_args = mock_requests.get.call_args
+        assert call_args[1]["timeout"] == 10
+
+
+class TestAdafruitIOHTTPModuleUnavailability:
+    """Test behavior when required modules are unavailable."""
+
+    @patch("shared.cloud.adafruit_io_http.requests", None)
+    def test_publish_raises_when_requests_unavailable(self) -> None:
+        """publish() raises RuntimeError when requests module is None."""
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="requests module not available"):
+            client.publish("pooltemp", 72.5)
+
+    @patch("shared.cloud.adafruit_io_http.requests", None)
+    def test_fetch_latest_raises_when_requests_unavailable(self) -> None:
+        """fetch_latest() raises RuntimeError when requests module is None."""
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="requests module not available"):
+            client.fetch_latest("pooltemp")
+
+    @patch("shared.cloud.adafruit_io_http.requests", None)
+    def test_fetch_history_raises_when_requests_unavailable(self) -> None:
+        """fetch_history() raises RuntimeError when requests module is None."""
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="requests module not available"):
+            client.fetch_history("pooltemp", hours=24)
+
+    @patch("shared.cloud.adafruit_io_http.requests", None)
+    def test_sync_time_raises_when_requests_unavailable(self) -> None:
+        """sync_time() raises RuntimeError when requests module is None."""
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="requests module not available"):
+            client.sync_time()
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    @patch("shared.cloud.adafruit_io_http.datetime", None)
+    def test_sync_time_raises_when_datetime_unavailable(self, mock_requests: MagicMock) -> None:
+        """sync_time() raises RuntimeError when datetime module is None."""
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="datetime module not available"):
+            client.sync_time()
+
+
+class TestAdafruitIOHTTPResponseValidation:
+    """Test response data validation."""
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_latest_returns_none_when_value_missing(self, mock_requests: MagicMock) -> None:
+        """fetch_latest() returns None when 'value' key is missing."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"id": "123"}
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        result = client.fetch_latest("pooltemp")
+
+        assert result is None
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_history_returns_empty_on_malformed_data(self, mock_requests: MagicMock) -> None:
+        """fetch_history() returns empty list when data items are malformed."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": [["timestamp_only"]]}
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        result = client.fetch_history("pooltemp", hours=24)
+
+        assert result == []
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_sync_time_raises_on_missing_field(self, mock_requests: MagicMock) -> None:
+        """sync_time() raises RuntimeError when time field is missing."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "year": 2024,
+            "mon": 1,
+            "mday": 15,
+            # Missing "hour", "min", "sec"
+        }
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError, match="Missing time field"):
+            client.sync_time()
+
+
+class TestAdafruitIOHTTPResponseClosure:
+    """Test that HTTP responses are properly closed."""
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_publish_closes_response(self, mock_requests: MagicMock) -> None:
+        """publish() closes the response object."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.publish("pooltemp", 72.5)
+
+        mock_response.close.assert_called_once()
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_latest_closes_response(self, mock_requests: MagicMock) -> None:
+        """fetch_latest() closes the response object."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"value": "72.5"}
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.fetch_latest("pooltemp")
+
+        mock_response.close.assert_called_once()
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_latest_closes_response_on_404(self, mock_requests: MagicMock) -> None:
+        """fetch_latest() closes response even on 404."""
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.fetch_latest("unknown")
+
+        mock_response.close.assert_called_once()
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_latest_closes_response_on_error(self, mock_requests: MagicMock) -> None:
+        """fetch_latest() closes response even on HTTP error."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        with pytest.raises(RuntimeError):
+            client.fetch_latest("pooltemp")
+
+        mock_response.close.assert_called_once()
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_fetch_history_closes_response(self, mock_requests: MagicMock) -> None:
+        """fetch_history() closes the response object."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": []}
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.fetch_history("pooltemp", hours=24)
+
+        mock_response.close.assert_called_once()
+
+    @patch("shared.cloud.adafruit_io_http.requests")
+    def test_sync_time_closes_response(self, mock_requests: MagicMock) -> None:
+        """sync_time() closes the response object."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "year": 2024,
+            "mon": 1,
+            "mday": 15,
+            "hour": 10,
+            "min": 30,
+            "sec": 45,
+        }
+        mock_requests.get.return_value = mock_response
+
+        client = AdafruitIOHTTP("testuser", "test_api_key")
+        client.sync_time()
+
+        mock_response.close.assert_called_once()
