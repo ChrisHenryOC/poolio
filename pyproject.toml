@@ -63,5 +63,6 @@ module = [
     "digitalio",
     "busio",
     "adafruit_logging",
+    "onewireio",
 ]
 ignore_missing_imports = true
