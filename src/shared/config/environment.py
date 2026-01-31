@@ -4,19 +4,19 @@
 from .schema import VALID_ENVIRONMENTS, ConfigurationError
 
 # Feed group names per environment
-FEED_GROUPS: dict[str, str] = {
+FEED_GROUPS = {
     "prod": "poolio",
     "nonprod": "poolio-nonprod",
 }
 
 # API key names in secrets per environment
-API_KEY_NAMES: dict[str, str] = {
+API_KEY_NAMES = {
     "prod": "AIO_KEY_PROD",
     "nonprod": "AIO_KEY_NONPROD",
 }
 
 
-def validate_environment(environment: str) -> None:
+def validate_environment(environment):
     """
     Validate environment string.
 
@@ -30,7 +30,7 @@ def validate_environment(environment: str) -> None:
         raise ConfigurationError(f"Unknown environment: {environment}. Valid: {VALID_ENVIRONMENTS}")
 
 
-def get_feed_name(logical_name: str, environment: str) -> str:
+def get_feed_name(logical_name, environment):
     """
     Get full feed name with group prefix.
 
@@ -57,7 +57,7 @@ def get_feed_name(logical_name: str, environment: str) -> str:
         return f"{group}.{environment}-{logical_name}"
 
 
-def select_api_key(environment: str, secrets: dict[str, str]) -> str:
+def select_api_key(environment, secrets):
     """
     Select appropriate API key for environment.
 
@@ -93,11 +93,7 @@ class EnvironmentConfig:
         hardware_enabled: Whether hardware operations are enabled
     """
 
-    environment: str
-    feed_group: str
-    hardware_enabled: bool
-
-    def __init__(self, environment: str) -> None:
+    def __init__(self, environment):
         """
         Initialize EnvironmentConfig.
 
@@ -111,19 +107,3 @@ class EnvironmentConfig:
         # Hardware is enabled for both prod and nonprod by default
         # Per architecture.md, nonprod hardware is "configurable"
         self.hardware_enabled = True
-
-
-def get_environment_config(environment: str) -> EnvironmentConfig:
-    """
-    Get environment configuration.
-
-    Args:
-        environment: Environment name ("prod" or "nonprod")
-
-    Returns:
-        EnvironmentConfig instance for the environment
-
-    Raises:
-        ConfigurationError: If environment is invalid
-    """
-    return EnvironmentConfig(environment)

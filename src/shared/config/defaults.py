@@ -1,11 +1,14 @@
 # Default configuration values per node type
 # CircuitPython compatible (no dataclasses, no type annotations in signatures)
 
-from typing import Any
+try:
+    from typing import Any
+except ImportError:
+    Any = None  # CircuitPython doesn't have typing module
 
 # Node type defaults per architecture.md Section 3.5
 # These are overridden by config.json and then by cloud-provided config
-NODE_DEFAULTS: dict[str, dict[str, Any]] = {
+NODE_DEFAULTS = {
     "pool_node": {
         "sleep_duration": 120,  # seconds between readings
         "float_switch_reads": 30,  # number of reads for debouncing
@@ -27,28 +30,3 @@ NODE_DEFAULTS: dict[str, dict[str, Any]] = {
         "watchdog_timeout": 120,  # seconds
     },
 }
-
-# Document which config items are hot-reloadable vs restart-required
-# per architecture.md Section 3.5
-HOT_RELOADABLE = [
-    "reportInterval",
-    "staleDataThreshold",
-    "chartRefreshInterval",
-    "screensaverTimeout",
-    "valveStartTime",
-    "fillWindowHours",
-    "maxFillDuration",
-    "logLevel",
-    "debugLogging",
-]
-
-RESTART_REQUIRED = [
-    "deviceId",
-    "environment",
-    "hardwareEnabled",
-    # GPIO pins
-    # I2C/SPI addresses
-    # API keys
-    # WiFi credentials
-    # Supported message versions
-]

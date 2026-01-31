@@ -50,13 +50,16 @@ The code has comments stating "CircuitPython compatible (no dataclasses, no type
 - Uses type hints like `def validate_environment(environment: str) -> None:`
 
 **Fix options:**
+
 1. Add conditional import guards per CLAUDE.md:
+
    ```python
    try:
        from typing import Any
    except ImportError:
        Any = None
    ```
+
 2. Remove type hints from function signatures (document types in docstrings instead)
 3. OR remove the "CircuitPython compatible" claims if this module is CPython-only
 

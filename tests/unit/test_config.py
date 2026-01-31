@@ -167,6 +167,20 @@ class TestValidateEnvironment:
         with pytest.raises(ConfigurationError):
             validate_environment("dev")
 
+    def test_validate_environment_rejects_empty_string(self) -> None:
+        """validate_environment raises ConfigurationError for empty string."""
+        from shared.config import ConfigurationError, validate_environment
+
+        with pytest.raises(ConfigurationError):
+            validate_environment("")
+
+    def test_validate_environment_is_case_sensitive(self) -> None:
+        """validate_environment rejects uppercase 'PROD'."""
+        from shared.config import ConfigurationError, validate_environment
+
+        with pytest.raises(ConfigurationError):
+            validate_environment("PROD")
+
 
 class TestGetFeedName:
     """Test get_feed_name function."""
@@ -287,46 +301,6 @@ class TestEnvironmentConfig:
         assert config.hardware_enabled is True
 
 
-class TestGetEnvironmentConfig:
-    """Test get_environment_config function."""
-
-    def test_get_environment_config_can_be_imported(self) -> None:
-        """get_environment_config can be imported from shared.config."""
-        from shared.config import get_environment_config
-
-        assert get_environment_config is not None
-
-    def test_get_environment_config_returns_environment_config(self) -> None:
-        """get_environment_config returns EnvironmentConfig instance."""
-        from shared.config import EnvironmentConfig, get_environment_config
-
-        result = get_environment_config("prod")
-        assert isinstance(result, EnvironmentConfig)
-
-    def test_get_environment_config_prod(self) -> None:
-        """get_environment_config returns correct config for prod."""
-        from shared.config import get_environment_config
-
-        result = get_environment_config("prod")
-        assert result.environment == "prod"
-        assert result.feed_group == "poolio"
-
-    def test_get_environment_config_nonprod(self) -> None:
-        """get_environment_config returns correct config for nonprod."""
-        from shared.config import get_environment_config
-
-        result = get_environment_config("nonprod")
-        assert result.environment == "nonprod"
-        assert result.feed_group == "poolio-nonprod"
-
-    def test_get_environment_config_raises_for_invalid(self) -> None:
-        """get_environment_config raises ConfigurationError for invalid environment."""
-        from shared.config import ConfigurationError, get_environment_config
-
-        with pytest.raises(ConfigurationError):
-            get_environment_config("invalid")
-
-
 class TestConfig:
     """Test Config class."""
 
@@ -371,6 +345,13 @@ class TestConfig:
 
         config = Config("pool_node", "prod", {})
         assert config.get("missing", "default") == "default"
+
+    def test_config_get_returns_none_when_no_default(self) -> None:
+        """Config.get() returns None when key missing and no default provided."""
+        from shared.config import Config
+
+        config = Config("pool_node", "prod", {})
+        assert config.get("missing") is None
 
 
 class TestLoadConfig:

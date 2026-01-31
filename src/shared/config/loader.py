@@ -1,14 +1,17 @@
 # Configuration loader
 # CircuitPython compatible (no dataclasses, no type annotations in signatures)
 
-from typing import Any
+try:
+    from typing import Any
+except ImportError:
+    Any = None  # CircuitPython doesn't have typing module
 
 from .defaults import NODE_DEFAULTS
 from .environment import validate_environment
 from .schema import ConfigurationError
 
 # Valid node types
-VALID_NODE_TYPES: list[str] = ["pool_node", "valve_node", "display_node"]
+VALID_NODE_TYPES = ["pool_node", "valve_node", "display_node"]
 
 
 class Config:
@@ -24,11 +27,7 @@ class Config:
         settings: Dictionary of configuration settings
     """
 
-    node_type: str
-    environment: str
-    settings: dict[str, Any]
-
-    def __init__(self, node_type: str, environment: str, settings: dict[str, Any]) -> None:
+    def __init__(self, node_type, environment, settings):
         """
         Initialize Config.
 
@@ -41,7 +40,7 @@ class Config:
         self.environment = environment
         self.settings = settings
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key, default=None):
         """
         Get configuration value.
 
@@ -55,7 +54,7 @@ class Config:
         return self.settings.get(key, default)
 
 
-def load_config(node_type: str, env_override: str | None = None) -> Config:
+def load_config(node_type, env_override=None):
     """
     Load configuration for a node type.
 
@@ -84,7 +83,7 @@ def load_config(node_type: str, env_override: str | None = None) -> Config:
 
     # Start with defaults for this node type
     defaults = NODE_DEFAULTS.get(node_type, {})
-    settings: dict[str, Any] = dict(defaults)
+    settings = dict(defaults)
 
     # TODO: Load from config.json and merge
     # TODO: Load from settings.toml and merge secrets

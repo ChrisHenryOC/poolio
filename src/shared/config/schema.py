@@ -13,5 +13,3 @@ class ConfigurationError(Exception):
     Used for invalid configuration values, missing required fields,
     or unknown node types/environments.
     """
-
-    pass
