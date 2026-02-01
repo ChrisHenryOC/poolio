@@ -1,0 +1,56 @@
+{
+  "$schema": "../schemas/valve_node_config.json",
+  "$comment": "Nonprod configuration for Valve Node. See docs/architecture.md Section 11 for details.",
+
+  "environment": "nonprod",
+  "device_id": "valve-node-dev",
+  "device_type": "valve-node",
+  "feed_group": "poolio-nonprod",
+
+  "debug": true,
+  "publish_interval_seconds": 30,
+  "watchdog_timeout_seconds": 120,
+
+  "valve": {
+    "max_fill_duration_minutes": 5,
+    "cooldown_minutes": 1,
+    "default_start_time": "06:00"
+  },
+
+  "safety": {
+    "stale_data_threshold_seconds": 300,
+    "max_consecutive_fills": 3,
+    "fill_window_hours": 4
+  },
+
+  "hardware": {
+    "enabled": true,
+    "relay_pin": "D5",
+    "temp_sensor_pin": "D6"
+  },
+
+  "_config_fields": {
+    "_description": "Documentation of all configurable values",
+
+    "environment": "Environment name: 'prod' or 'nonprod'. Determines feed group and API key. Restart required.",
+    "device_id": "Unique identifier for this device. Used in messages and logging. Restart required.",
+    "device_type": "Type of device: 'valve-node', 'display-node', 'pool-node'. Restart required.",
+    "feed_group": "Adafruit IO feed group name. 'poolio' for prod, 'poolio-nonprod' for nonprod. Restart required.",
+
+    "debug": "Enable debug logging (true/false). Hot-reloadable.",
+    "publish_interval_seconds": "How often to publish status messages. Hot-reloadable.",
+    "watchdog_timeout_seconds": "Hardware watchdog timeout. Must feed at 25% of this interval. Restart required.",
+
+    "valve.max_fill_duration_minutes": "Maximum fill duration before automatic shutoff. Hot-reloadable.",
+    "valve.cooldown_minutes": "Minimum time between fill operations. Hot-reloadable.",
+    "valve.default_start_time": "Default daily fill window start time (HH:MM). Hot-reloadable.",
+
+    "safety.stale_data_threshold_seconds": "Consider pool data stale after this many seconds. Hot-reloadable.",
+    "safety.max_consecutive_fills": "Maximum fills allowed within fill window. Hot-reloadable.",
+    "safety.fill_window_hours": "Duration of fill window in hours. Hot-reloadable.",
+
+    "hardware.enabled": "Enable hardware control. Set false to simulate valve actions. Restart required.",
+    "hardware.relay_pin": "GPIO pin for relay control. Restart required.",
+    "hardware.temp_sensor_pin": "GPIO pin for OneWire temperature sensor. Restart required."
+  }
+}

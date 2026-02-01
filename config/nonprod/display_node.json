@@ -1,0 +1,73 @@
+{
+  "$schema": "../schemas/display_node_config.json",
+  "$comment": "Nonprod configuration for Display Node. See docs/architecture.md Section 11 for details.",
+
+  "environment": "nonprod",
+  "device_id": "display-node-dev",
+  "device_type": "display-node",
+  "feed_group": "poolio-nonprod",
+
+  "debug": true,
+  "publish_interval_seconds": 60,
+  "watchdog_timeout_seconds": 120,
+
+  "display": {
+    "chart_refresh_interval_seconds": 30,
+    "status_refresh_interval_seconds": 5,
+    "screensaver_timeout_seconds": 300,
+    "brightness": 100
+  },
+
+  "data": {
+    "stale_data_threshold_seconds": 180,
+    "pool_temp_range_min": 50,
+    "pool_temp_range_max": 100
+  },
+
+  "touch": {
+    "debounce_ms": 250,
+    "calibration": {
+      "x_min": 0,
+      "x_max": 4095,
+      "y_min": 0,
+      "y_max": 4095
+    }
+  },
+
+  "hardware": {
+    "display_type": "ILI9341",
+    "display_cs_pin": "D9",
+    "display_dc_pin": "D10",
+    "touch_cs_pin": "D6",
+    "i2c_sda_pin": "SDA",
+    "i2c_scl_pin": "SCL"
+  },
+
+  "_config_fields": {
+    "_description": "Documentation of all configurable values",
+
+    "environment": "Environment name: 'prod' or 'nonprod'. Determines feed group and API key. Restart required.",
+    "device_id": "Unique identifier for this device. Used in messages and logging. Restart required.",
+    "device_type": "Type of device: 'valve-node', 'display-node', 'pool-node'. Restart required.",
+    "feed_group": "Adafruit IO feed group name. 'poolio' for prod, 'poolio-nonprod' for nonprod. Restart required.",
+
+    "debug": "Enable debug logging (true/false). Hot-reloadable.",
+    "publish_interval_seconds": "How often to publish status messages. Hot-reloadable.",
+    "watchdog_timeout_seconds": "Hardware watchdog timeout. Must feed at 25% of this interval. Restart required.",
+
+    "display.chart_refresh_interval_seconds": "How often to refresh temperature charts. Hot-reloadable.",
+    "display.status_refresh_interval_seconds": "How often to refresh status display. Hot-reloadable.",
+    "display.screensaver_timeout_seconds": "Time before screensaver activates. Hot-reloadable.",
+    "display.brightness": "Display brightness (0-100). Hot-reloadable.",
+
+    "data.stale_data_threshold_seconds": "Consider data stale after this many seconds. Hot-reloadable.",
+    "data.pool_temp_range_min": "Minimum expected pool temperature (F). Used for chart scaling.",
+    "data.pool_temp_range_max": "Maximum expected pool temperature (F). Used for chart scaling.",
+
+    "touch.debounce_ms": "Touch debounce time in milliseconds. Hot-reloadable.",
+    "touch.calibration.*": "Touch screen calibration values. Restart required.",
+
+    "hardware.display_type": "Display controller type. Restart required.",
+    "hardware.*_pin": "GPIO pin assignments. Restart required."
+  }
+}
