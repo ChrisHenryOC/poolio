@@ -1,0 +1,418 @@
+diff --git a/circuitpython/configs/display-node/nonprod/config.json b/circuitpython/configs/display-node/nonprod/config.json
+new file mode 100644
+index 0000000..623f5bb
+--- /dev/null
++++ b/circuitpython/configs/display-node/nonprod/config.json
+@@ -0,0 +1,13 @@
++{
++  "environment": "nonprod",
++  "device_id": "display-node-dev",
++  "device_type": "display-node",
++  "feed_group": "poolio-nonprod",
++  "debug": true,
++  "refresh_interval_seconds": 10,
++  "watchdog_timeout_seconds": 120,
++  "display": {
++    "brightness": 100,
++    "screen_timeout_seconds": 60
++  }
++}
+diff --git a/circuitpython/configs/display-node/prod/config.json b/circuitpython/configs/display-node/prod/config.json
+new file mode 100644
+index 0000000..b619d98
+--- /dev/null
++++ b/circuitpython/configs/display-node/prod/config.json
+@@ -0,0 +1,13 @@
++{
++  "environment": "prod",
++  "device_id": "display-node-01",
++  "device_type": "display-node",
++  "feed_group": "poolio",
++  "debug": false,
++  "refresh_interval_seconds": 30,
++  "watchdog_timeout_seconds": 120,
++  "display": {
++    "brightness": 100,
++    "screen_timeout_seconds": 300
++  }
++}
+diff --git a/circuitpython/configs/valve-node/nonprod/config.json b/circuitpython/configs/valve-node/nonprod/config.json
+new file mode 100644
+index 0000000..9ce359e
+--- /dev/null
++++ b/circuitpython/configs/valve-node/nonprod/config.json
+@@ -0,0 +1,13 @@
++{
++  "environment": "nonprod",
++  "device_id": "valve-node-dev",
++  "device_type": "valve-node",
++  "feed_group": "poolio-nonprod",
++  "debug": true,
++  "publish_interval_seconds": 30,
++  "watchdog_timeout_seconds": 120,
++  "valve": {
++    "max_fill_duration_minutes": 5,
++    "cooldown_minutes": 1
++  }
++}
+diff --git a/circuitpython/configs/valve-node/prod/config.json b/circuitpython/configs/valve-node/prod/config.json
+new file mode 100644
+index 0000000..76248d7
+--- /dev/null
++++ b/circuitpython/configs/valve-node/prod/config.json
+@@ -0,0 +1,13 @@
++{
++  "environment": "prod",
++  "device_id": "valve-node-01",
++  "device_type": "valve-node",
++  "feed_group": "poolio",
++  "debug": false,
++  "publish_interval_seconds": 60,
++  "watchdog_timeout_seconds": 120,
++  "valve": {
++    "max_fill_duration_minutes": 30,
++    "cooldown_minutes": 5
++  }
++}
+diff --git a/circuitpython/deploy.py b/circuitpython/deploy.py
+index 08233a1..7688a60 100644
+--- a/circuitpython/deploy.py
++++ b/circuitpython/deploy.py
+@@ -5,16 +5,18 @@
+ This script manages deployment of:
+ - Adafruit CircuitPython libraries from the bundle
+ - Project source code (shared/, node-specific code)
++- Environment-specific configuration (config.json)
+ - Device test framework (optional)
+ 
+ Usage:
+-    python circuitpython/deploy.py --target pool-node
+-    python circuitpython/deploy.py --target valve-node --source
++    python circuitpython/deploy.py --target valve-node --env nonprod
++    python circuitpython/deploy.py --target display-node --env prod --source
+     python circuitpython/deploy.py --target test --device /Volumes/CIRCUITPY
+ """
+ 
+ import argparse
+ import glob
++import json
+ import os
+ import shutil
+ import sys
+@@ -38,6 +40,10 @@
+ BUNDLE_DIR = SCRIPT_DIR / "bundle"
+ REQUIREMENTS_DIR = SCRIPT_DIR / "requirements"
+ PROJECT_ROOT = SCRIPT_DIR.parent
++CONFIGS_DIR = SCRIPT_DIR / "configs"
++
++# Valid environments
++VALID_ENVIRONMENTS = ("prod", "nonprod")
+ 
+ 
+ def find_device():
+@@ -228,6 +234,54 @@ def deploy_source(device_path, include_tests=False):
+             print("  Copied: tests/device/")
+ 
+ 
++def check_settings_toml(device_path: Path) -> bool:
++    """Check if settings.toml exists on device and warn if missing."""
++    settings_file = device_path / "settings.toml"
++
++    if not settings_file.exists():
++        print("\nWARNING: settings.toml not found on device")
++        print("You need to create settings.toml with your secrets:")
++        print("")
++        print('  CIRCUITPY_WIFI_SSID = "your_wifi_ssid"')
++        print('  CIRCUITPY_WIFI_PASSWORD = "your_wifi_password"')
++        print('  AIO_USERNAME = "your_adafruit_io_username"')
++        print('  AIO_KEY = "your_adafruit_io_key"')
++        print("")
++        return False
++
++    print("  Found: settings.toml (secrets preserved)")
++    return True
++
++
++def deploy_config(device_path: Path, target: str, environment: str) -> bool:
++    """Deploy environment-specific config.json to device."""
++    config_source = CONFIGS_DIR / target / environment / "config.json"
++
++    if not config_source.exists():
++        print(f"\nWARNING: Config not found: {config_source}")
++        print("Skipping config deployment.")
++        return False
++
++    # Validate JSON before copying
++    try:
++        with open(config_source) as f:
++            config_data = json.load(f)
++    except json.JSONDecodeError as e:
++        print(f"\nERROR: Invalid JSON in {config_source}: {e}")
++        return False
++
++    # Verify environment matches
++    if config_data.get("environment") != environment:
++        print("\nWARNING: Config environment mismatch")
++        print(f"  Expected: {environment}")
++        print(f"  Found: {config_data.get('environment')}")
++
++    config_dest = device_path / "config.json"
++    shutil.copy2(config_source, config_dest)
++    print(f"  Deployed: config.json ({environment})")
++    return True
++
++
+ def list_targets():
+     """List available deployment targets."""
+     print("Available targets:")
+@@ -242,11 +296,11 @@ def main():
+         formatter_class=argparse.RawDescriptionHelpFormatter,
+         epilog="""
+ Examples:
+-  %(prog)s --target pool-node              Deploy pool node libraries
+-  %(prog)s --target test --source          Deploy test libs + source code
+-  %(prog)s --target valve-node --source    Deploy valve node with source
+-  %(prog)s --list-targets                  Show available targets
+-  %(prog)s --download-only                 Just download the bundle
++  %(prog)s --target valve-node --env nonprod   Deploy valve node to nonprod
++  %(prog)s --target display-node --env prod    Deploy display node to prod
++  %(prog)s --target test --source              Deploy test libs + source code
++  %(prog)s --list-targets                      Show available targets
++  %(prog)s --download-only                     Just download the bundle
+         """,
+     )
+ 
+@@ -255,6 +309,12 @@ def main():
+         "-t",
+         help="Deployment target (pool-node, valve-node, display-node, test)",
+     )
++    parser.add_argument(
++        "--env",
++        "-e",
++        choices=VALID_ENVIRONMENTS,
++        help="Environment (prod, nonprod) - deploys matching config.json",
++    )
+     parser.add_argument(
+         "--device",
+         "-d",
+@@ -316,6 +376,11 @@ def main():
+ 
+     print(f"Device: {device_path}")
+     print(f"Target: {args.target}")
++    if args.env:
++        print(f"Environment: {args.env}")
++
++    # Check for settings.toml (secrets)
++    check_settings_toml(device_path)
+ 
+     # Load and deploy libraries
+     libraries = load_requirements(args.target)
+@@ -326,6 +391,11 @@ def main():
+     if args.source or args.tests:
+         deploy_source(device_path, include_tests=args.tests)
+ 
++    # Deploy environment config if specified
++    if args.env:
++        print("\nDeploying configuration...")
++        deploy_config(device_path, args.target, args.env)
++
+     print("\nDeployment complete!")
+     return 0
+ 
+diff --git a/docs/deployment/circuitpy-deployment.md b/docs/deployment/circuitpy-deployment.md
+new file mode 100644
+index 0000000..d3c214a
+--- /dev/null
++++ b/docs/deployment/circuitpy-deployment.md
+@@ -0,0 +1,191 @@
++# CircuitPython Deployment Guide
++
++This guide covers deploying code to CircuitPython-based nodes (Valve Node, Display Node).
++
++## Prerequisites
++
++1. **CircuitPython device** - ESP32-S3 Feather or similar with CircuitPython installed
++2. **Python environment** - Python 3.x with dependencies (managed by uv)
++3. **Device mounted** - CIRCUITPY drive must be mounted
++4. **Adafruit IO setup** - Feeds created via `scripts/adafruit_io_setup.py`
++
++## Quick Start
++
++```bash
++# Deploy valve-node to nonprod environment
++python circuitpython/deploy.py --target valve-node --env nonprod --source
++
++# Deploy display-node to production
++python circuitpython/deploy.py --target display-node --env prod --source
++```
++
++## Deployment Script
++
++The `circuitpython/deploy.py` script handles the full deployment.
++
++### Arguments
++
++| Argument | Options | Description |
++|----------|---------|-------------|
++| `--target`, `-t` | `valve-node`, `display-node`, `pool-node`, `test` | Target device type |
++| `--env`, `-e` | `prod`, `nonprod` | Environment (deploys matching config.json) |
++| `--source`, `-s` | flag | Also deploy project source code |
++| `--tests` | flag | Also deploy device tests |
++| `--device`, `-d` | path | Device mount path (default: auto-detect) |
++
++### What It Does
++
++1. **Downloads bundle** - Fetches Adafruit CircuitPython library bundle if needed
++2. **Detects device** - Finds CIRCUITPY mount point (macOS or Linux)
++3. **Checks settings.toml** - Warns if secrets file is missing
++4. **Deploys libraries** - Copies required libraries from bundle to `lib/`
++5. **Deploys source** - Copies `src/shared/` to device (with `--source`)
++6. **Deploys config** - Copies environment-specific `config.json` (with `--env`)
++
++### Example Output
++
++```text
++Device: /Volumes/CIRCUITPY
++Target: valve-node
++Environment: nonprod
++  Found: settings.toml (secrets preserved)
++
++Deploying 12 libraries to /Volumes/CIRCUITPY/lib...
++  Copied: adafruit_minimqtt/
++  Copied: adafruit_io/
++  ...
++
++Deploying source code...
++  Copied: shared/
++
++Deploying configuration...
++  Deployed: config.json (nonprod)
++
++Deployment complete!
++```
++
++## Configuration Files
++
++### settings.toml (Secrets - Manual Setup)
++
++Create this file manually on the device. It contains secrets and is **never overwritten**
++by deployments.
++
++```toml
++# WiFi credentials
++CIRCUITPY_WIFI_SSID = "your_wifi_ssid"
++CIRCUITPY_WIFI_PASSWORD = "your_wifi_password"
++
++# Adafruit IO credentials
++AIO_USERNAME = "your_adafruit_io_username"
++AIO_KEY = "your_adafruit_io_key"
++
++# Timezone (for scheduling)
++TIMEZONE = "America/Los_Angeles"
++```
++
++### config.json (Environment Config - Auto-deployed)
++
++Environment-specific configuration is stored in `circuitpython/configs/<node-type>/<environment>/config.json`
++and copied to the device during deployment.
++
++Example (`circuitpython/configs/valve-node/nonprod/config.json`):
++
++```json
++{
++  "environment": "nonprod",
++  "device_id": "valve-node-dev",
++  "device_type": "valve-node",
++  "feed_group": "poolio-nonprod",
++  "debug": true,
++  "publish_interval_seconds": 30,
++  "watchdog_timeout_seconds": 120,
++  "valve": {
++    "max_fill_duration_minutes": 5,
++    "cooldown_minutes": 1
++  }
++}
++```
++
++## Environment Differences
++
++| Setting | Production | Non-Production |
++|---------|------------|----------------|
++| feed_group | `poolio` | `poolio-nonprod` |
++| debug | `false` | `true` |
++| publish_interval | 60s | 30s |
++| valve max_fill | 30 min | 5 min |
++
++## Device Mount Points
++
++The script auto-detects the CIRCUITPY mount:
++
++| Platform | Mount Point |
++|----------|-------------|
++| macOS | `/Volumes/CIRCUITPY` |
++| Linux | `/media/$USER/CIRCUITPY` |
++| Linux (alt) | `/run/media/$USER/CIRCUITPY` |
++
++## Troubleshooting
++
++### Device Not Found
++
++```text
++ERROR: CIRCUITPY device not found.
++```
++
++- Ensure device is connected via USB
++- Check if device appears in file manager
++- Try a different USB port or cable
++- Specify path manually: `--device /path/to/CIRCUITPY`
++
++### Settings.toml Missing
++
++```text
++WARNING: settings.toml not found on device
++```
++
++This is expected on first deployment. Create `settings.toml` with your secrets
++before the device can connect to WiFi and Adafruit IO.
++
++### Library Not Found in Bundle
++
++```text
++WARNING: Libraries not found in bundle: some_library
++```
++
++- Verify the library name in your requirements file
++- Some libraries may need manual installation
++- Check the Adafruit CircuitPython bundle contents
++
++## Common Deployment Scenarios
++
++```bash
++# Development: Deploy with source and test framework
++python circuitpython/deploy.py --target valve-node --env nonprod --source --tests
++
++# Production: Deploy without tests
++python circuitpython/deploy.py --target valve-node --env prod --source
++
++# Libraries only (no source or config)
++python circuitpython/deploy.py --target valve-node
++
++# List available targets
++python circuitpython/deploy.py --list-targets
++
++# Download bundle only (no device needed)
++python circuitpython/deploy.py --download-only
++```
++
++## Post-Deployment
++
++After deployment:
++
++1. **Verify settings.toml** - Ensure secrets are configured
++2. **Reset device** - Press reset button or Ctrl+D in REPL
++3. **Monitor output** - `python scripts/serial_monitor.py`
++
++## See Also
++
++- [Adafruit IO Setup](../adafruit-io-setup.md) - Creating feeds
++- [Architecture: Deployment](../architecture.md#deployment) - Deployment architecture

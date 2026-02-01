@@ -5,16 +5,18 @@ Deploy CircuitPython code and libraries to device.
 This script manages deployment of:
 - Adafruit CircuitPython libraries from the bundle
 - Project source code (shared/, node-specific code)
+- Environment-specific configuration (config.json)
 - Device test framework (optional)
 
 Usage:
-    python circuitpython/deploy.py --target pool-node
-    python circuitpython/deploy.py --target valve-node --source
+    python circuitpython/deploy.py --target valve-node --env nonprod
+    python circuitpython/deploy.py --target display-node --env prod --source
     python circuitpython/deploy.py --target test --device /Volumes/CIRCUITPY
 """
 
 import argparse
 import glob
+import json
 import os
 import shutil
 import sys
@@ -38,6 +40,10 @@ SCRIPT_DIR = Path(__file__).parent
 BUNDLE_DIR = SCRIPT_DIR / "bundle"
 REQUIREMENTS_DIR = SCRIPT_DIR / "requirements"
 PROJECT_ROOT = SCRIPT_DIR.parent
+CONFIGS_DIR = SCRIPT_DIR / "configs"
+
+# Valid environments
+VALID_ENVIRONMENTS = ("prod", "nonprod")
 
 
 def find_device():
@@ -228,6 +234,63 @@ def deploy_source(device_path, include_tests=False):
             print("  Copied: tests/device/")
 
 
+def check_settings_toml(device_path: Path) -> bool:
+    """Check if settings.toml exists on device and warn if missing."""
+    settings_file = device_path / "settings.toml"
+
+    if not settings_file.exists():
+        print("\nWARNING: settings.toml not found on device")
+        print("You need to create settings.toml with your secrets:")
+        print("")
+        print('  CIRCUITPY_WIFI_SSID = "your_wifi_ssid"')
+        print('  CIRCUITPY_WIFI_PASSWORD = "your_wifi_password"')
+        print('  AIO_USERNAME = "your_adafruit_io_username"')
+        print('  AIO_KEY = "your_adafruit_io_key"')
+        print("")
+        return False
+
+    print("  Found: settings.toml (secrets preserved)")
+    return True
+
+
+def deploy_config(device_path: Path, target: str, environment: str) -> bool:
+    """Deploy environment-specific config.json to device."""
+    # Validate target directory exists to prevent path traversal
+    target_dir = CONFIGS_DIR / target
+    if not target_dir.is_dir():
+        available = [d.name for d in CONFIGS_DIR.iterdir() if d.is_dir()]
+        print(f"\nERROR: Unknown target '{target}' for config deployment")
+        if available:
+            print(f"  Available targets with configs: {', '.join(available)}")
+        return False
+
+    config_source = target_dir / environment / "config.json"
+
+    if not config_source.exists():
+        print(f"\nWARNING: Config not found: {config_source}")
+        print("Skipping config deployment.")
+        return False
+
+    # Validate JSON before copying
+    try:
+        with open(config_source) as f:
+            config_data = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"\nERROR: Invalid JSON in {config_source}: {e}")
+        return False
+
+    # Verify environment matches
+    if config_data.get("environment") != environment:
+        print("\nWARNING: Config environment mismatch")
+        print(f"  Expected: {environment}")
+        print(f"  Found: {config_data.get('environment')}")
+
+    config_dest = device_path / "config.json"
+    shutil.copy2(config_source, config_dest)
+    print(f"  Deployed: config.json ({environment})")
+    return True
+
+
 def list_targets():
     """List available deployment targets."""
     print("Available targets:")
@@ -242,11 +305,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --target pool-node              Deploy pool node libraries
-  %(prog)s --target test --source          Deploy test libs + source code
-  %(prog)s --target valve-node --source    Deploy valve node with source
-  %(prog)s --list-targets                  Show available targets
-  %(prog)s --download-only                 Just download the bundle
+  %(prog)s --target valve-node --env nonprod   Deploy valve node to nonprod
+  %(prog)s --target display-node --env prod    Deploy display node to prod
+  %(prog)s --target test --source              Deploy test libs + source code
+  %(prog)s --list-targets                      Show available targets
+  %(prog)s --download-only                     Just download the bundle
         """,
     )
 
@@ -254,6 +317,12 @@ Examples:
         "--target",
         "-t",
         help="Deployment target (pool-node, valve-node, display-node, test)",
+    )
+    parser.add_argument(
+        "--env",
+        "-e",
+        choices=VALID_ENVIRONMENTS,
+        help="Environment (prod, nonprod) - deploys matching config.json",
     )
     parser.add_argument(
         "--device",
@@ -316,6 +385,11 @@ Examples:
 
     print(f"Device: {device_path}")
     print(f"Target: {args.target}")
+    if args.env:
+        print(f"Environment: {args.env}")
+
+    # Check for settings.toml (secrets)
+    has_settings = check_settings_toml(device_path)
 
     # Load and deploy libraries
     libraries = load_requirements(args.target)
@@ -326,7 +400,18 @@ Examples:
     if args.source or args.tests:
         deploy_source(device_path, include_tests=args.tests)
 
+    # Deploy environment config if specified
+    config_deployed = True
+    if args.env:
+        print("\nDeploying configuration...")
+        config_deployed = deploy_config(device_path, args.target, args.env)
+
+    # Summary
     print("\nDeployment complete!")
+    if not has_settings:
+        print("  Note: settings.toml not found - device may not connect to WiFi/cloud")
+    if args.env and not config_deployed:
+        print("  Warning: config.json was not deployed")
     return 0
 
 
