@@ -24,10 +24,10 @@
 | ✅ | #17 | [Core] Logging Module |
 | ✅ | #18 | [Core] Sensor Utilities |
 | ✅ | #19 | [Test] Foundation Integration Test |
-| ⬚ | #85 | feat: On-device tests for shared library modules (Phase 2) |
-| ⬚ | #64 | [Setup] Adafruit IO Feed Setup - Nonprod |
-| ⬚ | #65 | [Setup] Deploy Script for CircuitPython |
-| ⬚ | #66 | [Setup] Configuration Files - Nonprod |
+| ✅ | #85 | feat: On-device tests for shared library modules (Phase 2) |
+| ✅ | #64 | [Setup] Adafruit IO Feed Setup - Nonprod |
+| ✅ | #65 | [Setup] Deploy Script for CircuitPython |
+| ✅ | #66 | [Setup] Configuration Files - Nonprod |
 
 ## Phase 2a: Pool Node (C++)
 
@@ -116,10 +116,10 @@
 
 | Phase | Total | Complete | Remaining |
 |-------|-------|----------|-----------|
-| 1. Foundation | 16 | 12 | 4 |
+| 1. Foundation | 16 | 16 | 0 |
 | 2a. Pool Node | 12 | 0 | 12 |
 | 2b. Valve Node | 7 | 0 | 7 |
 | 2c. Display Node | 22 | 0 | 22 |
 | 3. Simulators | 7 | 0 | 7 |
 | 4. Deployment | 8 | 0 | 8 |
-| **Total** | **72** | **12** | **60** |
+| **Total** | **72** | **16** | **56** |
