@@ -139,12 +139,17 @@ cython_debug/
 .LSOverride
 ._*
 
-# IDEs
+# IDEs and build artifacts
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
+
+# PlatformIO
+.pio/
+# Exception: allow pool_node_cpp/lib/ (lib/ is ignored globally for Python)
+!pool_node_cpp/lib/
 
 /docs/archive/
 /docs/todo-notes.txt
