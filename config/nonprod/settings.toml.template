@@ -1,0 +1,52 @@
+# CircuitPython settings.toml template for NONPROD environment
+# Copy this file to settings.toml on the CIRCUITPY drive and fill in your values
+# See docs/architecture.md Section 11 (Environment Configuration) for details
+#
+# IMPORTANT: Never commit settings.toml with real credentials!
+# The .gitignore file excludes settings.toml from version control.
+
+# =============================================================================
+# WiFi Configuration
+# =============================================================================
+# Your WiFi network name (SSID)
+CIRCUITPY_WIFI_SSID = "YOUR_WIFI_SSID"
+
+# Your WiFi password
+CIRCUITPY_WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
+
+# =============================================================================
+# Adafruit IO Configuration
+# =============================================================================
+# Your Adafruit IO username (from io.adafruit.com)
+AIO_USERNAME = "YOUR_AIO_USERNAME"
+
+# Adafruit IO API key for NONPROD environment
+# Get this from: io.adafruit.com -> Settings -> Active Key
+# For nonprod, you may use your main key or create a separate one
+AIO_KEY_NONPROD = "YOUR_AIO_KEY"
+
+# =============================================================================
+# Environment Configuration
+# =============================================================================
+# Environment: "nonprod" or "prod"
+# This determines which feed group and API key to use
+# DO NOT change this value - use the appropriate template file instead
+ENVIRONMENT = "nonprod"
+
+# =============================================================================
+# Timezone Configuration
+# =============================================================================
+# Timezone for local time display and scheduling
+# Uses IANA timezone database format
+# Common values:
+#   - America/Los_Angeles (Pacific)
+#   - America/Denver (Mountain)
+#   - America/Chicago (Central)
+#   - America/New_York (Eastern)
+TIMEZONE = "America/Los_Angeles"
+
+# =============================================================================
+# Optional: Debug Settings
+# =============================================================================
+# Uncomment to enable verbose serial output for debugging
+# CIRCUITPY_WEB_WORKFLOW_LOG_LEVEL = "DEBUG"
