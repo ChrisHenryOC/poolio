@@ -20,10 +20,9 @@ CIRCUITPY_WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
 # Your Adafruit IO username (from io.adafruit.com)
 AIO_USERNAME = "YOUR_AIO_USERNAME"
 
-# Adafruit IO API key for NONPROD environment
+# Adafruit IO API key
 # Get this from: io.adafruit.com -> Settings -> Active Key
-# For nonprod, you may use your main key or create a separate one
-AIO_KEY_NONPROD = "YOUR_AIO_KEY"
+AIO_KEY = "YOUR_AIO_KEY"
 
 # =============================================================================
 # Environment Configuration
