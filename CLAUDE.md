@@ -145,10 +145,9 @@ poolio_rearchitect/
 ### For CircuitPython Nodes
 
 ```bash
-# Deploy libraries and source code to device
-python circuitpython/deploy.py --target pool-node --source
-python circuitpython/deploy.py --target valve-node --source
-python circuitpython/deploy.py --target display-node --source
+# Deploy libraries, source code, and environment config to device
+python circuitpython/deploy.py --target valve-node --env nonprod --source
+python circuitpython/deploy.py --target display-node --env nonprod --source
 
 # Deploy for on-device testing
 python circuitpython/deploy.py --target test --source --tests

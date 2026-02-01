@@ -255,7 +255,16 @@ def check_settings_toml(device_path: Path) -> bool:
 
 def deploy_config(device_path: Path, target: str, environment: str) -> bool:
     """Deploy environment-specific config.json to device."""
-    config_source = CONFIGS_DIR / target / environment / "config.json"
+    # Validate target directory exists to prevent path traversal
+    target_dir = CONFIGS_DIR / target
+    if not target_dir.is_dir():
+        available = [d.name for d in CONFIGS_DIR.iterdir() if d.is_dir()]
+        print(f"\nERROR: Unknown target '{target}' for config deployment")
+        if available:
+            print(f"  Available targets with configs: {', '.join(available)}")
+        return False
+
+    config_source = target_dir / environment / "config.json"
 
     if not config_source.exists():
         print(f"\nWARNING: Config not found: {config_source}")
@@ -380,7 +389,7 @@ Examples:
         print(f"Environment: {args.env}")
 
     # Check for settings.toml (secrets)
-    check_settings_toml(device_path)
+    has_settings = check_settings_toml(device_path)
 
     # Load and deploy libraries
     libraries = load_requirements(args.target)
@@ -392,11 +401,17 @@ Examples:
         deploy_source(device_path, include_tests=args.tests)
 
     # Deploy environment config if specified
+    config_deployed = True
     if args.env:
         print("\nDeploying configuration...")
-        deploy_config(device_path, args.target, args.env)
+        config_deployed = deploy_config(device_path, args.target, args.env)
 
+    # Summary
     print("\nDeployment complete!")
+    if not has_settings:
+        print("  Note: settings.toml not found - device may not connect to WiFi/cloud")
+    if args.env and not config_deployed:
+        print("  Warning: config.json was not deployed")
     return 0
 
 

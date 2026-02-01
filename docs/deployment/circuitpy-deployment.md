@@ -187,5 +187,5 @@ After deployment:
 
 ## See Also
 
-- [Adafruit IO Setup](../adafruit-io-setup.md) - Creating feeds
+- [Adafruit IO Setup](./adafruit-io-nonprod-setup.md) - Creating feeds
 - [Architecture: Deployment](../architecture.md#deployment) - Deployment architecture

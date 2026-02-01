@@ -2125,129 +2125,81 @@ Sources: [CircuitPython nvm module](https://docs.circuitpython.org/en/latest/sha
 
 CircuitPython devices mount as a USB mass storage drive named **CIRCUITPY** (can be renamed, but 11 character limit). A deploy script copies the shared libraries, node-specific files, and environment configuration to the device.
 
-**Deploy Script Location:** `scripts/deploy_circuitpy.sh`
+**Deploy Script Location:** `circuitpython/deploy.py`
+
+The Python deploy script handles:
+
+- Downloading the Adafruit CircuitPython library bundle
+- Installing required libraries from the bundle to `lib/`
+- Copying shared source code (`src/shared/`)
+- Deploying environment-specific configuration (`config.json`)
+- Checking for `settings.toml` (secrets file)
 
 ```bash
-#!/bin/bash
-# Deploy CircuitPython node to connected device
-# Usage: ./scripts/deploy_circuitpy.sh <node_type> [environment]
-#   node_type: valve_node | display_node
-#   environment: nonprod (default) | prod
+# Deploy valve-node to nonprod environment
+python circuitpython/deploy.py --target valve-node --env nonprod --source
 
-set -e
+# Deploy display-node to production
+python circuitpython/deploy.py --target display-node --env prod --source
 
-NODE_TYPE=$1
-ENVIRONMENT=${2:-nonprod}
-CIRCUITPY="/Volumes/CIRCUITPY"  # macOS mount point
-
-# Linux mount point alternative: /media/$USER/CIRCUITPY
-
-if [ -z "$NODE_TYPE" ]; then
-    echo "Usage: $0 <valve_node|display_node> [nonprod|prod]"
-    exit 1
-fi
-
-if [ ! -d "$CIRCUITPY" ]; then
-    echo "Error: CIRCUITPY drive not found at $CIRCUITPY"
-    echo "Make sure the device is connected and mounted."
-    exit 1
-fi
-
-echo "Deploying $NODE_TYPE ($ENVIRONMENT) to $CIRCUITPY..."
-
-# Copy shared libraries to lib/
-echo "Copying shared libraries..."
-mkdir -p "$CIRCUITPY/lib"
-cp -r src/shared/messages "$CIRCUITPY/lib/"
-cp -r src/shared/cloud "$CIRCUITPY/lib/"
-cp -r src/shared/config "$CIRCUITPY/lib/"
-cp -r src/shared/logging "$CIRCUITPY/lib/"
-cp -r src/shared/sensors "$CIRCUITPY/lib/"
-
-# Copy node-specific files
-echo "Copying $NODE_TYPE files..."
-cp "src/$NODE_TYPE/code.py" "$CIRCUITPY/"
-
-# Copy additional node files (excluding lib/ symlink)
-if [ "$NODE_TYPE" = "valve_node" ]; then
-    cp src/valve_node/valve_controller.py "$CIRCUITPY/"
-    cp src/valve_node/scheduler.py "$CIRCUITPY/"
-    cp src/valve_node/safety.py "$CIRCUITPY/"
-elif [ "$NODE_TYPE" = "display_node" ]; then
-    cp src/display_node/dashboard.py "$CIRCUITPY/"
-    cp -r src/display_node/ui "$CIRCUITPY/"
-fi
-
-# Copy environment-specific config
-echo "Copying $ENVIRONMENT config..."
-cp "config/$ENVIRONMENT/$NODE_TYPE.json" "$CIRCUITPY/config.json"
-
-# Copy settings.toml template if it doesn't exist
-if [ ! -f "$CIRCUITPY/settings.toml" ]; then
-    echo "Creating settings.toml template..."
-    cp "config/$ENVIRONMENT/settings.toml.template" "$CIRCUITPY/settings.toml"
-    echo "WARNING: Edit $CIRCUITPY/settings.toml with your credentials!"
-fi
-
-echo "Deployment complete. Device will auto-reload."
+# List available targets
+python circuitpython/deploy.py --list-targets
 ```
+
+The script auto-detects the CIRCUITPY mount point:
+
+- macOS: `/Volumes/CIRCUITPY`
+- Linux: `/media/$USER/CIRCUITPY` or `/run/media/$USER/CIRCUITPY`
 
 **Environment Configuration Files:**
 
 ```text
-config/
-├── nonprod/
-│   ├── valve_node.json         # Valve node config (nonprod feeds, debug on)
-│   ├── display_node.json       # Display node config (nonprod feeds, debug on)
-│   └── settings.toml.template  # Template with nonprod environment
-└── prod/
-    ├── valve_node.json         # Valve node config (prod feeds, debug off)
-    ├── display_node.json       # Display node config (prod feeds, debug off)
-    └── settings.toml.template  # Template with prod environment
+circuitpython/configs/
+├── valve-node/
+│   ├── nonprod/
+│   │   └── config.json    # Valve node config (nonprod feeds, debug on)
+│   └── prod/
+│       └── config.json    # Valve node config (prod feeds, debug off)
+└── display-node/
+    ├── nonprod/
+    │   └── config.json    # Display node config (nonprod feeds, debug on)
+    └── prod/
+        └── config.json    # Display node config (prod feeds, debug off)
 ```
 
-**Example: `config/nonprod/valve_node.json`**
+**Example: `circuitpython/configs/valve-node/nonprod/config.json`**
 
 ```json
 {
   "environment": "nonprod",
-  "deviceId": "valve-node-001",
-  "feedGroup": "poolio-nonprod",
-  "valveStartTime": "09:00",
-  "maxFillMinutes": 9,
-  "fillWindowHours": 2,
-  "fillCheckInterval": 10,
-  "statusUpdateInterval": 60,
-  "stalenessMultiplier": 2,
-  "debugLogging": true
+  "device_id": "valve-node-dev",
+  "device_type": "valve-node",
+  "feed_group": "poolio-nonprod",
+  "debug": true,
+  "publish_interval_seconds": 30,
+  "watchdog_timeout_seconds": 120,
+  "valve": {
+    "max_fill_duration_minutes": 5,
+    "cooldown_minutes": 1
+  }
 }
 ```
 
-**Example: `config/nonprod/settings.toml.template`**
+**Secrets File: `settings.toml`**
+
+Create this file manually on the device (never overwritten by deploy script):
 
 ```toml
-# WiFi credentials (fill in your values)
-CIRCUITPY_WIFI_SSID = "YOUR_WIFI_SSID"
-CIRCUITPY_WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
+# WiFi credentials
+CIRCUITPY_WIFI_SSID = "your_wifi_ssid"
+CIRCUITPY_WIFI_PASSWORD = "your_wifi_password"
 
 # Adafruit IO credentials
-AIO_USERNAME = "YOUR_AIO_USERNAME"
-AIO_KEY_NONPROD = "YOUR_NONPROD_API_KEY"
-AIO_KEY_PROD = "YOUR_PROD_API_KEY"
+AIO_USERNAME = "your_aio_username"
+AIO_KEY = "your_aio_key"
 
-# Environment
-ENVIRONMENT = "nonprod"
+# Timezone
 TIMEZONE = "America/Los_Angeles"
-```
-
-**Usage:**
-
-```bash
-# Deploy Valve Node to nonprod (default)
-./scripts/deploy_circuitpy.sh valve_node
-
-# Deploy Display Node to prod
-./scripts/deploy_circuitpy.sh display_node prod
 ```
 
 **File Structure on CIRCUITPY:**

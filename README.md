@@ -73,16 +73,17 @@ npx markdownlint-cli docs/*.md
 Deploy code and libraries to a connected CircuitPython device:
 
 ```bash
-# Deploy to specific node type
-python circuitpython/deploy.py --target pool-node --source
-python circuitpython/deploy.py --target valve-node --source
-python circuitpython/deploy.py --target display-node --source
+# Deploy to specific node type with environment config
+python circuitpython/deploy.py --target valve-node --env nonprod --source
+python circuitpython/deploy.py --target display-node --env prod --source
 
 # List available targets
 python circuitpython/deploy.py --list-targets
 ```
 
-The deploy script automatically downloads the Adafruit CircuitPython bundle and installs the required libraries for each node type.
+The deploy script automatically downloads the Adafruit CircuitPython bundle, installs the required libraries, and deploys environment-specific configuration.
+
+See [CircuitPython Deployment Guide](docs/deployment/circuitpy-deployment.md) for detailed instructions.
 
 ### On-Device Testing
 
