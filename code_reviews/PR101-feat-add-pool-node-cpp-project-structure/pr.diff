@@ -1,0 +1,165 @@
+diff --git a/.gitignore b/.gitignore
+index 6d842b0..6a5b5ba 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -139,13 +139,18 @@ cython_debug/
+ .LSOverride
+ ._*
+ 
+-# IDEs
++# IDEs and build artifacts
+ .idea/
+ .vscode/
+ *.swp
+ *.swo
+ *~
+ 
++# PlatformIO
++.pio/
++# Exception: allow pool_node_cpp/lib/ (lib/ is ignored globally for Python)
++!pool_node_cpp/lib/
++
+ /docs/archive/
+ /docs/todo-notes.txt
+ /mockups-venv/
+diff --git a/pool_node_cpp/include/secrets.h.example b/pool_node_cpp/include/secrets.h.example
+new file mode 100644
+index 0000000..0ddd214
+--- /dev/null
++++ b/pool_node_cpp/include/secrets.h.example
+@@ -0,0 +1,7 @@
++// Copy to secrets.h and fill in your values
++// secrets.h is in .gitignore - never commit actual secrets
++
++#define WIFI_SSID "YOUR_WIFI_SSID"
++#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
++#define AIO_USERNAME "YOUR_AIO_USERNAME"
++#define AIO_KEY "YOUR_AIO_KEY"
+diff --git a/pool_node_cpp/lib/.gitkeep b/pool_node_cpp/lib/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/pool_node_cpp/platformio.ini b/pool_node_cpp/platformio.ini
+new file mode 100644
+index 0000000..26d196f
+--- /dev/null
++++ b/pool_node_cpp/platformio.ini
+@@ -0,0 +1,59 @@
++; PlatformIO Project Configuration File
++; Pool Node C++ - ESP32 battery-powered sensor
++;
++; Build environments:
++;   pio run -e nonprod     # Development/testing with debug logging
++;   pio run -e prod        # Production build
++;   pio test -e native     # Run unit tests on host machine
++;
++; Upload:
++;   pio run -e nonprod --target upload
++;
++; Monitor:
++;   pio device monitor
++
++[platformio]
++default_envs = nonprod
++
++[env]
++platform = espressif32
++board = adafruit_feather_esp32_v2
++framework = arduino
++monitor_speed = 115200
++
++; Common build flags
++build_flags =
++    -DCORE_DEBUG_LEVEL=0
++
++; ArduinoJson for message serialization
++lib_deps =
++    bblanchon/ArduinoJson@^7
++
++[env:nonprod]
++; Development/testing environment
++; Uses nonprod- feed prefix for isolated testing
++build_flags =
++    ${env.build_flags}
++    -DENVIRONMENT=\"nonprod\"
++    -DFEED_PREFIX=\"nonprod-\"
++    -DDEBUG_LOGGING=1
++
++[env:prod]
++; Production environment
++; No feed prefix, debug logging disabled
++build_flags =
++    ${env.build_flags}
++    -DENVIRONMENT=\"prod\"
++    -DFEED_PREFIX=\"\"
++    -DDEBUG_LOGGING=0
++
++[env:native]
++; Native test environment for running unit tests on host machine
++; Usage: pio test -e native
++platform = native
++build_flags =
++    -DENVIRONMENT=\"test\"
++    -DFEED_PREFIX=\"test-\"
++    -DDEBUG_LOGGING=1
++lib_deps =
++    bblanchon/ArduinoJson@^7
+diff --git a/pool_node_cpp/src/main.cpp b/pool_node_cpp/src/main.cpp
+new file mode 100644
+index 0000000..48b8261
+--- /dev/null
++++ b/pool_node_cpp/src/main.cpp
+@@ -0,0 +1,51 @@
++/**
++ * Pool Node - Battery-powered pool sensor
++ *
++ * Sensors:
++ *   - DS18X20 temperature sensor (OneWire)
++ *   - Float switch for water level
++ *   - LC709203F battery gauge (I2C)
++ *
++ * Operation:
++ *   1. Wake from deep sleep
++ *   2. Read sensors
++ *   3. Publish status to Adafruit IO
++ *   4. Return to deep sleep
++ */
++
++#include <Arduino.h>
++
++#ifndef ENVIRONMENT
++#define ENVIRONMENT "unknown"
++#endif
++
++#ifndef FEED_PREFIX
++#define FEED_PREFIX ""
++#endif
++
++#ifndef DEBUG_LOGGING
++#define DEBUG_LOGGING 0
++#endif
++
++void setup() {
++    Serial.begin(115200);
++    delay(1000);
++
++    Serial.println("=================================");
++    Serial.println("Pool Node Starting");
++    Serial.print("Environment: ");
++    Serial.println(ENVIRONMENT);
++    Serial.print("Feed prefix: ");
++    Serial.println(FEED_PREFIX);
++#if DEBUG_LOGGING
++    Serial.println("Debug logging: enabled");
++#else
++    Serial.println("Debug logging: disabled");
++#endif
++    Serial.println("=================================");
++}
++
++void loop() {
++    // Main loop will be replaced with deep sleep cycle
++    delay(10000);
++}
+diff --git a/pool_node_cpp/test/.gitkeep b/pool_node_cpp/test/.gitkeep
+new file mode 100644
+index 0000000..e69de29
