@@ -13,10 +13,22 @@ All reviews should consider:
 
 ## Project Context
 
-- **Project**: [PROJECT_NAME] (Python)
+- **Project**: [PROJECT_NAME]
 - **Performance target**: [PERFORMANCE_TARGET]
 - **Memory target**: [MEMORY_TARGET]
-- **Standards**: Type hints required, ruff linting, pytest for testing
+
+### Python Standards
+
+- Type hints required
+- ruff linting
+- pytest for testing
+
+### C++ Standards (for C++ agents)
+
+- C++11/14/17 modern idioms
+- PlatformIO for builds and testing
+- C++ Core Guidelines: <https://isocpp.github.io/CppCoreGuidelines/>
+- ESP32/Arduino best practices
 
 ## Review Process
 

@@ -45,10 +45,36 @@ Per Kent Beck's principles, code should be self-documenting. Documentation shoul
 - Inconsistencies between docs and code
 
 **Documentation Anti-Patterns:**
+
 - Comments explaining "what" when code is clear
 - Commented-out code left "for reference"
 - TODO comments without associated issues
 - Documentation that will become stale quickly
+
+## C++ Documentation (Doxygen)
+
+**Function Documentation:**
+
+```cpp
+/// @brief Brief description of function
+/// @param paramName Description of parameter
+/// @return Description of return value
+/// @throws ExceptionType When this exception is thrown
+```
+
+**Class Documentation:**
+
+```cpp
+/// @class ClassName
+/// @brief Brief description of class purpose
+```
+
+**Quality Standards (C++):**
+
+- Public APIs have Doxygen comments when behavior isn't obvious
+- `@param` descriptions match actual parameter names
+- `@return` documentation accuracy
+- No redundant comments on self-explanatory code
 
 ## Sequential Thinking for Documentation Analysis
 
